@@ -74,7 +74,7 @@ LOCAL_APPS = [
 
     'chats',
 
-    # 'links',
+    'links',
 
     'movies',
     'photos',

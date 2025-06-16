@@ -33,6 +33,7 @@ urlpatterns = [
 
     path('users/', include('users.urls')),
     path('videos/', include('videos.urls')),
+    path('links/', include('links.urls')),
     # path('media/', include('media.urls')),
 
     path('posts/', include('posts.urls')),

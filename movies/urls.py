@@ -10,11 +10,7 @@ from movies.views import (
 
 urlpatterns = [
 
-    path('up', ViewsUP.as_view()),
-
-    path('add', AddMovie.as_view()),
-
-    path('feed/', FeedMovies.as_view()),
+     
 
 
 ]

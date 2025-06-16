@@ -137,6 +137,8 @@ class GoogleFirefoxQueryView(APIView):
             "results": [{"query": item} for item in data[1]]
         }
 
+        # create_query_name.delay()
+        # Query.objects.create(name=item)
         # print(output)
         return Response(output)
 
