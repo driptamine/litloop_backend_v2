@@ -1,5 +1,6 @@
 from django.shortcuts import render, get_object_or_404
 from django.db import IntegrityError
+from django.conf import settings
 
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
@@ -25,6 +26,10 @@ from .models import Track
 from .serializers import TrackSerializer, TrackListSerializer
 from tracks.pagination import CustomPagination
 
+from litloop_project.utils.spotipy_util import get_spotify_client
+
+sp = get_spotify_client()
+
 class TrackListAPIView(ListAPIView):
     queryset = Track.objects.all()
     serializer_class = TrackListSerializer
@@ -35,15 +40,7 @@ class SearchTrackAPIView(APIView):
 
     def get(self, request):
         term = self.request.query_params.get('q', None)
-        SPOTIPY_CLIENT_ID = "c57cfe40c3a640449c4766ee61ec9d59"
-        SPOTIPY_CLIENT_SECRET = "8c5ae0b0d9df47c8bae2804fe8e03cfa"
 
-        sp = spotipy.Spotify(
-            client_credentials_manager=SpotifyClientCredentials(
-                client_id=SPOTIPY_CLIENT_ID,
-                client_secret=SPOTIPY_CLIENT_SECRET
-            )
-        )
 
         search_result = sp.search(term, limit=10, type='track')
         # res = PostSerializer(search_result)
@@ -52,22 +49,18 @@ class SearchTrackAPIView(APIView):
         # return Response(res)
 
 
+
+SPOTIPY_CLIENT_ID = settings.SPOTIPY_CLIENT_ID
+SPOTIPY_CLIENT_SECRET = settings.SPOTIPY_CLIENT_SECRET
+
 class TrackDetailAPIView(RetrieveAPIView):
     # serializer_class = PostSerializer
     lookup_field = 'track_uri'
 
     def get(self, request, track_uri):
-        SPOTIPY_CLIENT_ID = "c57cfe40c3a640449c4766ee61ec9d59"
-        SPOTIPY_CLIENT_SECRET = "8c5ae0b0d9df47c8bae2804fe8e03cfa"
-
-        sp = spotipy.Spotify(
-            client_credentials_manager=SpotifyClientCredentials(
-                client_id=SPOTIPY_CLIENT_ID,
-                client_secret=SPOTIPY_CLIENT_SECRET
-            )
-        )
-        track_info = sp.track(track_uri)
         
+        track_info = sp.track(track_uri)
+
         return Response(track_info)
 
 

@@ -12,12 +12,10 @@ SPOTIPY_CLIENT_SECRET = settings.SPOTIPY_CLIENT_SECRET
 print(f"DEBUG: SPOTIPY_CLIENT_ID = '{SPOTIPY_CLIENT_ID}'")
 print(f"DEBUG: SPOTIPY_CLIENT_SECRET = '{SPOTIPY_CLIENT_SECRET}'")
 
-sp = spotipy.Spotify(
-    client_credentials_manager=SpotifyClientCredentials(
-        client_id=SPOTIPY_CLIENT_ID,
-        client_secret=SPOTIPY_CLIENT_SECRET
-    )
-)
+
+from litloop_project.utils.spotipy_util import get_spotify_client
+
+sp = get_spotify_client()
 
 class SearchArtistView(View):
     def get(self, request):
