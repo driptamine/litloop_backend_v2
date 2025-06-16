@@ -18,8 +18,8 @@ chown ubuntu:ubuntu /home/ubuntu/litloop_backend_v2/.env
 cd /home/ubuntu/litloop_backend_v2
 
 # Pull latest code
-echo "📥 Pulling latest code from main..."
-git pull origin main
+# echo "📥 Pulling latest code from main..."
+# git pull origin main
 
 # Create virtual environment if not exists
 echo "🐍 Setting up virtual environment..."
