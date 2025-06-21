@@ -1,12 +1,17 @@
 from django.urls import path
-from auth_cookie.apis import (
-    # LoginApi,
+# from auth_cookie.apis import (
+#     # LoginApi,
+#     GoogleLoginApi,
+#     TwitchLoginApi,
+#     # SpotifyLoginApi,
+#     # LogoutApi
+#     # GoogleTestApi,
+#     spotify_callback
+# )
+from auth_cookie.oauth_google import (
+
     GoogleLoginApi,
-    TwitchLoginApi,
-    # SpotifyLoginApi,
-    # LogoutApi
-    # GoogleTestApi,
-    spotify_callback
+
 )
 
 # from users.urls import CurrentUserViewAPI
@@ -17,10 +22,10 @@ urlpatterns = [
     # GOOGLE OAUTH
     # path('google/', redirect_to_google_oauth_url.as_view() ),
     # path('user', CurrentUserViewAPI.as_view() ),
-    path('google/callback', GoogleLoginApi.as_view() ),
+    # path('google/callback', GoogleLoginApi.as_view() ),
     path('google/token', GoogleLoginApi.as_view() ),
 
-    path('twitch/token', TwitchLoginApi.as_view() ),
+    # path('twitch/token', TwitchLoginApi.as_view() ),
 
     # path('google/callback', GoogleTestApi.as_view() ),
     # path('google/callback', spotify_callback ),

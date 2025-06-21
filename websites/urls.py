@@ -1,6 +1,6 @@
 # from __future__ import absolute_import
 from django.urls import path
-from websites.views import (
+from websites.views_v2 import (
     BingWebsiteSearchView,
     BingImageSearchView,
     BraveWebsiteSearchView,

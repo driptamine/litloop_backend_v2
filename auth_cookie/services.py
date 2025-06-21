@@ -96,7 +96,7 @@ def google_get_access_token(*, code, redirect_uri):
         'code': code,
         'client_id': google_client_id,
         'client_secret': google_client_secret,
-        'redirect_uri': "http://localhost:3001/auth/google/callback",
+        'redirect_uri': redirect_uri,
         'grant_type': 'authorization_code'
     }
 

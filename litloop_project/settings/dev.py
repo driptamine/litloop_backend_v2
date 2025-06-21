@@ -8,6 +8,7 @@ POSTGRES_USER = os.getenv("DB_USER")
 POSTGRES_HOST = os.getenv("DB_HOST")
 POSTGRES_PORT = os.getenv("DB_PORT")
 
+GOOGLE_OAUTH_REDIRECT_URI = "http://localhost:3001/auth/google/callback"
 
 DATABASES = {
     'default': {
