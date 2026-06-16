@@ -18,7 +18,12 @@ jobs:
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY_GCP }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.GCE_PUBLIC_IP }} >> ~/.ssh/known_hosts
+        if [ -n "${{ secrets.GCE_PUBLIC_IP }}" ]; then
+          ssh-keyscan -H ${{ secrets.GCE_PUBLIC_IP }} >> ~/.ssh/known_hosts
+        else
+          echo "Error: GCE_PUBLIC_IP secret is not set."
+          exit 1
+        fi
 
     - name: Create .env file
       run: |
