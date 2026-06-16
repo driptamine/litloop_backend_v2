@@ -43,6 +43,7 @@ python manage.py collectstatic --noinput
 echo "🚦 Configuring Daphne..."
 # Update WorkingDirectory and ExecStart in gunicorn.service if necessary
 sed -i "s|/home/ubuntu/litloop_backend_v2|$(pwd)|g" deploy/gunicorn/gunicorn.service
+sed -i "s|User=ubuntu|User=$USER|g" deploy/gunicorn/gunicorn.service
 sudo cp deploy/gunicorn/gunicorn.service /etc/systemd/system/daphne.service
 sudo systemctl daemon-reload
 sudo systemctl enable daphne

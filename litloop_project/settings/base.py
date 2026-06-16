@@ -24,7 +24,7 @@ SITE_URL = "http://localhost:8000"
 # See https://docs.djangoproject.com/en/3.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'qcss(9#e6wch%rq2zk8i89d3y=h9-#gt@b@g=69zzj#q_pf!(k'
+SECRET_KEY = os.getenv('SECRET_KEY', 'qcss(9#e6wch%rq2zk8i89d3y=h9-#gt@b@g=69zzj#q_pf!(k')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 # if os.environ.get('ENVIRONMENT') == 'development':
