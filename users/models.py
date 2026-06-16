@@ -10,9 +10,9 @@ from users.managers import UserManager
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    username    = models.CharField(max_length=255, unique=True, db_index=True)
+    username    = models.CharField(max_length=255, unique=True, db_index=True, blank=True, null=True)
     email       = models.EmailField(max_length=255, unique=True, db_index=True)
-    avatar      = models.CharField(max_length=400)
+    avatar      = models.CharField(max_length=500, blank=True, null=True)
 
     is_verified = models.BooleanField(default=False)
     is_active   = models.BooleanField(default=True)
@@ -26,7 +26,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     # followers = models.ManyToManyField("self", blank=True)
 
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    REQUIRED_FIELDS = []
 
     objects = UserManager()
 
@@ -42,3 +42,15 @@ class User(AbstractBaseUser, PermissionsMixin):
         refresh_token = RefreshToken.for_user(self)
 
         return str(refresh_token)
+
+    @property
+    def thumbnail_url(self):
+        return self.avatar
+
+    @property
+    def name(self):
+        return self.username
+
+    @property
+    def logo(self):
+        return self.avatar

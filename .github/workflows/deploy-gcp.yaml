@@ -1,0 +1,38 @@
+name: Deploy to GCP
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY_GCP }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.GCE_PUBLIC_IP }} >> ~/.ssh/known_hosts
+
+    - name: Create .env file
+      run: |
+        echo "DJANGO_SETTINGS_MODULE=litloop_project.settings.prod" >> .env
+        echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
+        echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+        echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+        echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+        echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
+        echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+        # Add other necessary secrets here
+
+    - name: Deploy to Server
+      run: |
+        ssh ${{ secrets.GCP_USER }}@${{ secrets.GCE_PUBLIC_IP }} "mkdir -p ~/litloop_backend_v2"
+        rsync -avz --exclude '.git' --exclude 'env' --exclude '__pycache__' ./ ${{ secrets.GCP_USER }}@${{ secrets.GCE_PUBLIC_IP }}:~/litloop_backend_v2/
+        ssh ${{ secrets.GCP_USER }}@${{ secrets.GCE_PUBLIC_IP }} "cd ~/litloop_backend_v2 && bash deploy/deploy_script.sh"

@@ -38,8 +38,10 @@ def register_social_user(provider, user_id, email, name):
                 detail='Please continue your login using ' + filtered_user_by_email[0].auth_provider)
 
     else:
+        email_prefix = email.split('@')[0].replace('.', '_')
         user = {
-            'username': generate_username(name), 'email': email,
+            'username': generate_username(email_prefix), 
+            'email': email,
             'password': os.environ.get('SOCIAL_SECRET')
         }
         user = User.objects.create_user(**user)

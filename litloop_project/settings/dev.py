@@ -2,11 +2,11 @@
 from litloop_project.settings.base import *
 import os
 
-POSTGRES_DB = os.getenv("DB_NAME")
+POSTGRES_DB       = os.getenv("DB_NAME")
 POSTGRES_PASSWORD = os.getenv("DB_PASSWORD")
-POSTGRES_USER = os.getenv("DB_USER")
-POSTGRES_HOST = os.getenv("DB_HOST")
-POSTGRES_PORT = os.getenv("DB_PORT")
+POSTGRES_USER     = os.getenv("DB_USER")
+POSTGRES_HOST     = os.getenv("DB_HOST")
+POSTGRES_PORT     = os.getenv("DB_PORT")
 
 GOOGLE_OAUTH_REDIRECT_URI = "http://localhost:3001/auth/google/callback"
 
@@ -21,6 +21,5 @@ DATABASES = {
         'PORT': '5432'
     }
 }
-# DEBUG = True
-DEBUG = False
+DEBUG = True
 ALLOWED_HOSTS=['*']

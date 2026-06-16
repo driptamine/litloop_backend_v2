@@ -1,8 +1,9 @@
 import uuid
 
 from django.db import models
+from django.utils.html import strip_tags
 
-
+from posts import helpers
 from posts.helpers import original_media_file_path, original_thumbnail_file_path
 from users.models import User
 
@@ -12,12 +13,13 @@ class Photo(models.Model):
         ('attached', 'Attached'),
     ]
 
-    status      = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
+    status          = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
 
     s3_key          = models.CharField(max_length=400, null=True)
+    gcs_key         = models.CharField(max_length=400, null=True, blank=True)
     filename        = models.CharField(max_length=400, null=True)
 
-    # user            = models.ForeignKey("users.User", on_delete=models.CASCADE)
+    user            = models.ForeignKey("users.User", on_delete=models.CASCADE, null=True, blank=True)
     title           = models.TextField(blank=True, null=True)
 
 
@@ -63,12 +65,27 @@ class PhotoAlbum(models.Model):
     def set_ordering(self, photo, ordering):
         if photo not in self.photo.all():
             return False
-        pa = PhotoAlbum.objects.filter(photo_album=self, photo=photo).first()
+        pa = PhotoAlbumItem.objects.filter(photo_album=self, photo=photo).first()
         if pa and isinstance(ordering, int) and 0 < ordering:
             pa.ordering = ordering
             pa.save()
             return True
         return False
+
+    def add_photo(self, photo):
+        """Adds a photo to the album and returns the created PhotoAlbumItem or None if already exists."""
+        if PhotoAlbumItem.objects.filter(photo_album=self, photo=photo).exists():
+            return None
+
+        # Determine next ordering
+        last_item = self.photoalbumitem_set.order_by('-ordering').first()
+        next_ordering = (last_item.ordering + 1) if last_item else 1
+
+        return PhotoAlbumItem.objects.create(
+            photo_album=self,
+            photo=photo,
+            ordering=next_ordering
+        )
 
     def save(self, *args, **kwargs):
         strip_text_items = ["title", "description"]

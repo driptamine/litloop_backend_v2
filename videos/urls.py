@@ -5,7 +5,7 @@ from django.conf.urls.static import static
 from django.urls import path
 
 from videos.spot import views_spot
-from videos.upload import ( s3_views, s3_views_qalybay )
+from videos.upload import ( s3_views, s3_views_qalybay, gcs_video_views_no_drf as gcs_video_views, gcs_native_video_views_no_drf as gcs_native_video_views )
 from videos import views
 # from . import management_views, views
 # from . import views
@@ -19,6 +19,14 @@ urlpatterns = [
     path('get_presigned_url/', s3_views_qalybay.get_presigned_url  ),
     path('complete_upload/', s3_views_qalybay.complete_upload  ),
 
+    # GCS Upload Endpoints (Matches S3 Flow via Boto3/HMAC)
+    path('gcs/create_presigned_url/', gcs_video_views.gcs_initiate_video_upload, name='gcs_initiate_video'),
+    path('gcs/get_presigned_url/', gcs_video_views.gcs_get_video_part_url, name='gcs_get_video_part'),
+    path('gcs/complete_upload/', gcs_video_views.gcs_complete_video_upload, name='gcs_complete_video'),
+
+    # Native GCS Upload Endpoints (Using google-cloud-storage library)
+    path('gcs/native/initiate/', gcs_native_video_views.gcs_native_initiate_video_upload, name='gcs_native_initiate_video'),
+    path('gcs/native/complete/', gcs_native_video_views.gcs_native_complete_video_upload, name='gcs_native_complete_video'),
 
     path('create_video/', s3_views_qalybay.create_video  ),
 

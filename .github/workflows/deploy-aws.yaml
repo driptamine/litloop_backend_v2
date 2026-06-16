@@ -1,0 +1,63 @@
+name: Deploy to AWS
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[deploy-aws]')
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.9'
+
+    - name: Save SSH private key
+      run: |
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > key.pem
+        chmod 600 key.pem
+
+    - name: Upload .env file to EC2
+      run: |
+        cat > .env << EOF
+        DJANGO_SETTINGS_MODULE=${{ secrets.DJANGO_SETTINGS_MODULE }}
+        SPOTIPY_CLIENT_ID=${{ secrets.SPOTIPY_CLIENT_ID }}
+        SPOTIPY_CLIENT_SECRET=${{ secrets.SPOTIPY_CLIENT_SECRET }}
+
+        AWS_ACCESS_KEY_QALYBAY=${{ secrets.AWS_ACCESS_KEY_QALYBAY }}
+        AWS_SECRET_KEY_QALYBAY=${{ secrets.AWS_SECRET_KEY_QALYBAY }}
+        AWS_STORAGE_BUCKET_NAME_QALYBAY=${{ secrets.AWS_STORAGE_BUCKET_NAME_QALYBAY }}
+
+        GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+        GOOGLE_SECRET_KEY=${{ secrets.GOOGLE_SECRET_KEY }}
+        GOOGLE_GEMINI_API_KEY=${{ secrets.GOOGLE_GEMINI_API_KEY }}
+
+        DB_ENGINE=${{ secrets.DB_ENGINE }}
+        DB_NAME=${{ secrets.DB_NAME }}
+        DB_USER=${{ secrets.DB_USER }}
+        DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+        DB_HOST=${{ secrets.DB_HOST }}
+        DB_PORT=${{ secrets.DB_PORT }}
+        DATABASE_URL=${{ secrets.DATABASE_URL }}
+        EOF
+
+        scp -i key.pem -o StrictHostKeyChecking=no .env ubuntu@${{ secrets.EC2_PUBLIC_IP }}:/home/ubuntu/litloop_backend_v2/.env
+
+    - name: SSH into EC2 and run deploy script
+      run: |
+        ssh -i key.pem -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
+          cd /home/ubuntu/litloop_backend_v2
+          git pull origin main
+          bash deploy/deploy_script.sh
+        EOF
+
+    - name: Clean up local secrets
+      run: rm -f .env key.pem

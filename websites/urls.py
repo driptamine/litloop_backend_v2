@@ -5,7 +5,9 @@ from websites.views_v2 import (
     BingImageSearchView,
     BraveWebsiteSearchView,
     BraveImageSearchView,
-    GoogleCustomSearchImageView
+    GoogleCustomSearchImageView,
+    AllWebsitesView,
+    SearchWebsitesView,
 )
 
 # from websites.parser.inject_html import (
@@ -32,6 +34,8 @@ urlpatterns = [
 
     path('google/custom/search', GoogleCustomSearchImageView.as_view(), name='search' ),
 
+    path('all', AllWebsitesView.as_view(), name='all'),
+    path('search', SearchWebsitesView.as_view(), name='search'),
 
     # path('url/', ModifyHTMLView.as_view(), name='modify_html'),
 

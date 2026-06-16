@@ -2,6 +2,8 @@ boto3==1.35.99
 cassandra-driver
 celery
 channels
+channels-redis
+daphne
 cinemagoer
 deezer-py
 django
@@ -11,6 +13,7 @@ django-extensions
 django-mptt
 django-redis
 django-shortcuts
+dj-database-url
 djangorestframework
 djangorestframework-simplejwt
 drf-yasg
@@ -19,6 +22,8 @@ elasticsearch
 elasticsearch-dsl
 filetype
 google-genai
+google-cloud-storage
+attrs
 gunicorn
 m3u8
 psycopg2-binary

@@ -6,6 +6,7 @@ from tracks.managers import TrackManager
 
 class SpotifyTrack(models.Model):
     s3_key       = models.CharField(max_length=400, null=True, blank=True)
+    gcs_key      = models.CharField(max_length=400, null=True, blank=True)
     filename     = models.CharField(max_length=400)
 
 class Track(models.Model):
@@ -17,6 +18,7 @@ class Track(models.Model):
     status       = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
 
     s3_key       = models.CharField(max_length=400, null=True, blank=True)
+    gcs_key      = models.CharField(max_length=400, null=True, blank=True)
     filename     = models.CharField(max_length=400, null=True, blank=True)
 
     track_uri    = models.CharField(max_length=400)
@@ -24,10 +26,17 @@ class Track(models.Model):
     track_number = models.CharField(max_length=400, default="")
     artists      = models.ManyToManyField('artists.Artist', related_name='tracks', blank=True)
 
-    album = models.ForeignKey('albums.Album', related_name='tracks', on_delete=models.CASCADE, null=True, blank=True)
+    album        = models.ForeignKey('albums.Album', related_name='tracks', on_delete=models.CASCADE, null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    release_date = models.DateTimeField(null=True, blank=True)
+
+    user         = models.ForeignKey('users.User', related_name='tracks', on_delete=models.CASCADE, null=True, blank=True)
 
     likes        = models.ManyToManyField('users.User', through='TrackLike', blank=True, related_name='track_likes')
     plays        = models.ManyToManyField('users.User', through='TrackPlay', blank=True, related_name='track_plays')
+
 
     # tags     = ManyToManyField('users.User', through=TrackLikeTag, related_query_name='track_liketags', null=True)
     # comments = ManyToManyField('users.User', through=TrackComment, related_query_name='track_comments', null=True)

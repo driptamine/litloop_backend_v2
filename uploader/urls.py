@@ -2,36 +2,31 @@
 # from django.conf.urls import re_path
 from django.urls import path
 from . import views
-from .views import FineUploaderView
 
 # from hitman_rest_api.channels import TaskProgressConsumer
 from uploader.channels import TaskProgressConsumer
-from uploader.websocket.websocket_views import GetHitmen, StartNewHitJob, ScheduleNewHitJob, CreateUserView
+from uploader.websocket.websocket_views_no_drf import (
+    get_hitmen_view, start_new_hit_job_view, schedule_new_hit_job_view, create_user_view
+)
+
+from .views_no_drf import presigned_url_api
+from . import gcs_multipart_views_no_drf as gcs_multipart_views
 
 app_name = "uploader"
 
 urlpatterns = [
-    # re_path(r"^upload/", views.FineUploaderView.as_view(), name="upload"),
+    path('presigned-url/', presigned_url_api, name='presigned_url'),
 
-    # re_path(r"^upload/", views.FineUploaderView.as_view(), name="upload"),
-    # re_path(r"upload", views.FineUploaderView.as_view(), name="upload"),
-    # path(r"upload", views.FineUploaderView.as_view(), name="upload"),
+    # GCS Multipart Upload (Matches S3 Flow)
+    path('gcs/create_presigned_url/', gcs_multipart_views.gcs_initiate_multipart_upload, name='gcs_initiate'),
+    path('gcs/get_presigned_url/', gcs_multipart_views.gcs_get_part_presigned_url, name='gcs_get_part'),
+    path('gcs/complete_upload/', gcs_multipart_views.gcs_complete_multipart_upload, name='gcs_complete'),
 
-    path('upload/', views.FineUploaderView.as_view(), name="upload"),
-    # path('start-upload/', views.FineUploaderView.as_view(), name="upload"),
-    # path('complete-upload/', views.FineUploaderView.as_view(), name="upload"),
-    # path('get-upload-url/', views.FineUploaderView.as_view(), name="upload"),
-
-    # re_path(r"^upload", FineUploaderView.as_view(), name="upload"),
-    # path('upload', FineUploaderView.as_view(), name="upload"),
-
-    # path("hitmen/all", GetHitmen.as_view()),
-    # path("hitmen/start-job", StartNewHitJob.as_view()),
-    # path("hitmen/schedule", ScheduleNewHitJob.as_view()),
-
-    # path("uploader/all", GetHitmen.as_view()),
-    # path("uploader/start-job", StartNewHitJob.as_view()),
-    # path("uploader/schedule", ScheduleNewHitJob.as_view()),
+    # Hitmen / Jobs
+    path('hitmen/all/', get_hitmen_view, name='hitmen-all'),
+    path('hitmen/start-job/', start_new_hit_job_view, name='start-job'),
+    path('hitmen/schedule/', schedule_new_hit_job_view, name='schedule-job'),
+    path('hitmen/create-user/', create_user_view, name='create-user'),
 ]
 
 # ref docker-celery

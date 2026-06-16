@@ -8,11 +8,7 @@ from django.urls import path
 #     # GoogleTestApi,
 #     spotify_callback
 # )
-from auth_cookie.oauth_google import (
-
-    GoogleLoginApi,
-
-)
+from auth_cookie.views_no_drf import google_login_api, vk_login_api
 
 # from users.urls import CurrentUserViewAPI
 from django.urls import path
@@ -23,9 +19,12 @@ urlpatterns = [
     # path('google/', redirect_to_google_oauth_url.as_view() ),
     # path('user', CurrentUserViewAPI.as_view() ),
     # path('google/callback', GoogleLoginApi.as_view() ),
-    path('google/token', GoogleLoginApi.as_view() ),
+    path('google/token/', google_login_api, name='google_login_api'),
+    path('google/token', google_login_api),
 
-    # path('twitch/token', TwitchLoginApi.as_view() ),
+    # VK OAUTH
+    path('vk/token/', vk_login_api, name='vk_login_api'),
+    path('vk/token', vk_login_api),
 
     # path('google/callback', GoogleTestApi.as_view() ),
     # path('google/callback', spotify_callback ),

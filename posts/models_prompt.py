@@ -10,11 +10,13 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 class Photo(models.Model):
     s3_key          = models.CharField(max_length=400, null=True)
+    gcs_key         = models.CharField(max_length=400, null=True, blank=True)
     filename        = models.CharField(max_length=400, null=True)
     user            = models.ForeignKey("users.User", on_delete=models.CASCADE)
 
 class Video(models.Model):
     s3_key          = models.CharField(max_length=400)
+    gcs_key         = models.CharField(max_length=400, null=True, blank=True)
     filename        = models.CharField(max_length=400)
     user            = models.ForeignKey("users.User", on_delete=models.CASCADE)
 

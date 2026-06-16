@@ -20,7 +20,7 @@ class Post(models.Model):
     photos      = models.ManyToManyField(Photo,    through="PostPhoto",    blank=True,    related_name="postphotos")
     playlists   = models.ManyToManyField(Playlist, through="PostPlaylist", blank=True,    related_name="postplaylists")
 
-    title       = models.CharField(max_length=100, blank=True)
+    title       = models.CharField(max_length=100, blank=True, null=True)
     description = models.CharField(max_length=100, blank=True)
     friendly_id = models.CharField(max_length=100, blank=True)
 
@@ -41,14 +41,18 @@ class Post(models.Model):
     updated_at  = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering: ['-updated_at']
+        ordering = ['-updated_at']
 
 
     def save(self, *args, **kwargs):
         strip_text_items = ["title", "description"]
         for item in strip_text_items:
-            setattr(self, item, strip_tags(getattr(self, item, None)))
-        self.title = self.title[:99]
+            val = getattr(self, item, "")
+            if val:
+                setattr(self, item, strip_tags(str(val)))
+        
+        if self.title:
+            self.title = self.title[:99]
 
         if not self.friendly_id:
             while True:
@@ -61,9 +65,9 @@ class Post(models.Model):
 
 # ======== POST STATS ======= #
 class PostLike(models.Model):
-    post     = models.ForeignKey(Post, on_delete=models.CASCADE)
-    user     = models.ForeignKey(User, on_delete=models.CASCADE)
-    liked_at = models.DateTimeField(auto_now_add=True)
+    post        = models.ForeignKey(Post, on_delete=models.CASCADE)
+    user        = models.ForeignKey(User, on_delete=models.CASCADE)
+    liked_at    = models.DateTimeField(auto_now_add=True)
 
 class PostDislike(models.Model):
     post        = models.ForeignKey(Post, on_delete=models.CASCADE)
@@ -71,32 +75,32 @@ class PostDislike(models.Model):
     disliked_at = models.DateTimeField(auto_now_add=True)
 
 class PostImpression(models.Model):
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    post        = models.ForeignKey(Post, on_delete=models.CASCADE)
+    user        = models.ForeignKey(User, on_delete=models.CASCADE)
 
 class PostView(models.Model):
-    post      = models.ForeignKey(Post, on_delete=models.CASCADE)
-    user      = models.ForeignKey(User, on_delete=models.CASCADE)
-    viewed_at = models.DateTimeField(auto_now_add=True)
+    post        = models.ForeignKey(Post, on_delete=models.CASCADE)
+    user        = models.ForeignKey(User, on_delete=models.CASCADE)
+    viewed_at   = models.DateTimeField(auto_now_add=True)
 
 
 # ========= POST Attachments ========= #
 class PostPhoto(models.Model):
-    post  = models.ForeignKey(Post, on_delete=models.CASCADE)
-    photo = models.ForeignKey('photos.Photo', on_delete=models.CASCADE)
-    order = models.IntegerField(default=1)
+    post        = models.ForeignKey(Post, on_delete=models.CASCADE)
+    photo       = models.ForeignKey('photos.Photo', on_delete=models.CASCADE)
+    order       = models.IntegerField(default=1)
 
 class PostVideo(models.Model):
-    post  = models.ForeignKey(Post, on_delete=models.CASCADE)
-    video = models.ForeignKey('videos.Video', on_delete=models.CASCADE)
-    order = models.IntegerField(default=1)
+    post        = models.ForeignKey(Post, on_delete=models.CASCADE)
+    video       = models.ForeignKey('videos.Video', on_delete=models.CASCADE)
+    order       = models.IntegerField(default=1)
 
 class PostTrack(models.Model):
-    post  = models.ForeignKey(Post, on_delete=models.CASCADE)
-    track = models.ForeignKey('tracks.Track', on_delete=models.CASCADE)
-    order = models.IntegerField(default=1)
+    post        = models.ForeignKey(Post, on_delete=models.CASCADE)
+    track       = models.ForeignKey('tracks.Track', on_delete=models.CASCADE)
+    order       = models.IntegerField(default=1)
 
 class PostPlaylist(models.Model):
-    post = models.ForeignKey(Post, on_delete=models.CASCADE)
-    playlist = models.ForeignKey('playlists.Playlist', on_delete=models.CASCADE)
-    order = models.IntegerField(default=1)
+    post        = models.ForeignKey(Post, on_delete=models.CASCADE)
+    playlist    = models.ForeignKey('playlists.Playlist', on_delete=models.CASCADE)
+    order       = models.IntegerField(default=1)

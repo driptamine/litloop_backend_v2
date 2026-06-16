@@ -1,5 +1,5 @@
 [Unit]
-Description=gunicorn daemon for Django project
+Description=daphne ASGI daemon for Django project (with WebSocket support)
 After=network.target
 
 [Service]
@@ -11,11 +11,9 @@ WorkingDirectory=/home/ubuntu/litloop_backend_v2
 Environment=DJANGO_SETTINGS_MODULE=litloop_project.settings.prod
 
 
-ExecStart=/home/ubuntu/litloop_backend_v2/env/bin/gunicorn \
-    --access-logfile - \
-    --workers 3 \
-    --bind unix:/home/ubuntu/litloop_backend_v2/deploy/gunicorn/gunicorn.sock \
-    litloop_project.wsgi:application
+ExecStart=/home/ubuntu/litloop_backend_v2/env/bin/daphne \
+    -u /home/ubuntu/litloop_backend_v2/deploy/gunicorn/gunicorn.sock \
+    litloop_project.asgi:application
 
 
 Restart=always

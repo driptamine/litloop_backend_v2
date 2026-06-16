@@ -18,7 +18,10 @@ DATABASES = {
         'PASSWORD': POSTGRES_PASSWORD,
         'HOST': POSTGRES_HOST,
         'PORT': POSTGRES_PORT,
+        'OPTIONS': {
+            'sslmode': 'require',
+        }
     }
 }
 DEBUG = False
-ALLOWED_HOSTS=['*','https://litloop.netlify.app']
+ALLOWED_HOSTS=['*','https://litloop.netlify.app', 'litloop.duckdns.org']

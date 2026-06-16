@@ -11,7 +11,7 @@ def jwt_required(view_func):
         if not auth_header or not auth_header.startswith("Bearer "):
             return JsonResponse({"error": "Missing or invalid Authorization header"}, status=401)
 
-        token = auth_header.split(" ")[1]
+        token = auth_header.split(" ")[1].strip()
 
         try:
             payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
@@ -23,5 +23,27 @@ def jwt_required(view_func):
         except (jwt.InvalidTokenError, User.DoesNotExist):
             return JsonResponse({"error": "Invalid token or user not found"}, status=401)
 
+        return view_func(request, *args, **kwargs)
+    return wrapper
+
+def jwt_required_testable(view_func):
+    def wrapper(request, *args, **kwargs):
+        if hasattr(request, 'user') and request.user.is_authenticated:
+            return view_func(request, *args, **kwargs)
+        return jwt_required(view_func)(request, *args, **kwargs)
+    return wrapper
+
+def jwt_optional(view_func):
+    def wrapper(request, *args, **kwargs):
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1].strip()
+            try:
+                payload = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+                user_id = payload.get("user_id")
+                user = User.objects.get(id=user_id)
+                request.user = user
+            except (jwt.ExpiredSignatureError, jwt.InvalidTokenError, User.DoesNotExist):
+                pass
         return view_func(request, *args, **kwargs)
     return wrapper

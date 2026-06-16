@@ -37,7 +37,7 @@ if os.environ.get('ENVIRONMENT') == 'development':
     ALLOWED_HOSTS=['*']
 else:
     DEBUG = False
-    ALLOWED_HOSTS=['*', 'https://litloop.netlify.app']
+    ALLOWED_HOSTS=['*', 'https://litloop.netlify.app', 'litloop.duckdns.org']
 
 # ALLOWED_HOSTS=['*']
 
@@ -69,19 +69,21 @@ LOCAL_APPS = [
 
     'albums',
     'artists',
+    'auth_cookie',
     'comments',
     'images',
-
     'chats',
-
+    'jobs',
     'links',
-
     'movies',
+    'notes',
+    'notifications',
     'photos',
     'playlists',
     'posts',
     'queries',
     'suggestions',
+    'todos',
     'tracks',
     'uploader',
     'users',
@@ -98,15 +100,14 @@ THIRD_PARTY_APPS = [
     # "allauth.socialaccount",
     # 'django_cassandra_engine',
     'channels',
-    'rest_framework',
     'corsheaders',
     'django_extensions',
-    'drf_yasg',
     'mptt',
     'django_celery_beat',
 ]
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -123,16 +124,6 @@ INSTALLED_APPS = [
 ]
 
 SITE_ID = 1
-
-SWAGGER_SETTINGS = {
-    'SECURITY_DEFINITIONS': {
-        'Bearer': {
-            'type': 'apiKey',
-            'name': 'Authorization',
-            'in': 'header',
-        }
-    }
-}
 
 
 
@@ -230,7 +221,7 @@ SPOTIPY_CLIENT_SECRET = os.environ.get('SPOTIPY_CLIENT_SECRET')
 AWS_REGION_DRIPTAMINE           = 'eu-north-1'
 AWS_ACCESS_KEY_DRIPTAMINE       = os.environ.get('AWS_ACCESS_KEY_DRIPTAMINE')
 AWS_SECRET_KEY_DRIPTAMINE       = os.environ.get('AWS_SECRET_KEY_DRIPTAMINE')
-AWS_STORAGE_BUCKET_NAME_DRIPTAMINE   = os.environ.get('AWS_STORAGE_BUCKET_DRIPTAMINE')
+AWS_STORAGE_BUCKET_NAME_DRIPTAMINE   = os.environ.get('AWS_STORAGE_BUCKET_DRIPTAMINE', 'litloop_bucket_free')
 
 
 AWS_REGION_QALYBAY              = 'eu-north-1'
@@ -238,6 +229,14 @@ AWS_ACCESS_KEY_QALYBAY          = os.environ.get('AWS_ACCESS_KEY_QALYBAY')
 AWS_SECRET_KEY_QALYBAY          = os.environ.get('AWS_SECRET_KEY_QALYBAY')
 AWS_STORAGE_BUCKET_NAME_QALYBAY = os.environ.get('AWS_STORAGE_BUCKET_NAME_QALYBAY')
 
+# Google Cloud Storage Settings
+GCS_PROJECT_ID = os.environ.get('GCS_PROJECT_ID')
+GCS_BUCKET_NAME = os.environ.get('GCS_BUCKET_NAME', 'litloop_bucket_free')
+GCS_CREDENTIALS_JSON = os.environ.get('GCS_CREDENTIALS_JSON')
+GCS_PRESIGNED_EXPIRY = int(os.environ.get('GCS_PRESIGNED_EXPIRY') or 3600)
+
+GCS_HMAC_ACCESS_KEY = os.environ.get('GCS_HMAC_ACCESS_KEY')
+GCS_HMAC_SECRET = os.environ.get('GCS_HMAC_SECRET')
 
 
 AWS_S3_USE_SSL = os.environ.get('AWS_S3_USE_SSL', 'false').lower() == 'true'
@@ -267,41 +266,23 @@ BUCKET_MEDIA_CUSTOM_DOMAIN = os.environ.get('BUCKET_MEDIA_CUSTOM_DOMAIN')
 BUCKET_MEDIA_DEFAULT_ACL = None
 BUCKET_STATIC_CUSTOM_DOMAIN = os.environ.get('BUCKET_STATIC_CUSTOM_DOMAIN')
 
+# ...
 # DEFAULT_FILE_STORAGE = 'media.custom_storage.CustomS3Boto3Storage'
 # STATICFILES_STORAGE = os.environ.get(
 #     'STATICFILES_STORAGE', DEFAULT_FILE_STORAGE
 # )
 
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_SECRET_KEY")
+
+VK_CLIENT_ID = os.environ.get("VK_CLIENT_ID")
+VK_CLIENT_SECRET = os.environ.get("VK_CLIENT_SECRET")
+VK_OAUTH_REDIRECT_URI = os.environ.get("VK_OAUTH_REDIRECT_URI", "http://localhost:3001/auth/vk/callback")
 
 MEDIA_IS_REVIEWED = True
+# ...
 PORTAL_WORKFLOW = "private"
 
-REST_FRAMEWORK = {
-    'NON_FIELD_ERRORS_KEY': 'error',
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
-    'DEFAULT_RENDERER_CLASSES': [
-        'rest_framework.renderers.JSONRenderer',
-        'rest_framework.renderers.BrowsableAPIRenderer',
-    ],
-    # 'DEFAULT_PARSER_CLASSES': (
-    #     'rest_framework.parsers.JSONParser',
-    # )
-    # 'DEFAULT_PAGINATION_CLASS':
-    #      'tracks.pagination.CustomPagination'
-         # 'artcograph_dev.apps.tracks.pagination.CustomPagination'
-}
-
-# REST_FRAMEWORK = {
-#     'DEFAULT_PAGINATION_CLASS':
-#          '<project_name>.pagination.CustomPagination'
-# }
-
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': datetime.timedelta(days=365),
-    'REFRESH_TOKEN_LIFETIME': datetime.timedelta(days=1),
-}
 
 # Password validation
 # https://docs.djangoproject.com/en/3.1/ref/settings/#auth-password-validators
@@ -384,14 +365,6 @@ VIDEO_CHUNKS_DURATION = 60 * 4
 # always get these two, even if upscaling
 MINIMUM_RESOLUTIONS_TO_ENCODE = [240, 360]
 
-# this is for fineuploader - media uploads
-UPLOAD_DIR = "uploads/"
-CHUNKS_DIR = "chunks/"
-
-# number of files to upload using fineuploader at once
-UPLOAD_MAX_FILES_NUMBER = 100
-CONCURRENT_UPLOADS = True
-CHUNKS_DONE_PARAM_NAME = "done"
 FILE_STORAGE = "django.core.files.storage.DefaultStorage"
 
 X_FRAME_OPTIONS = "ALLOWALL"
@@ -422,6 +395,15 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 REDIS_LOCATION = "redis://127.0.0.1:6379/1"
 # REDIS_LOCATION = "redis://mycache.abc123.use1.cache.amazonaws.com:6379/1"
 # CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_LOCATION],
+        },
+    },
+}
 
 CACHES = {
     "default": {
@@ -492,19 +474,6 @@ if os.environ.get("TESTING"):
     CELERY_TASK_ALWAYS_EAGER = True
 
 
-# OAuth PROVIDERS
-# GOOGLE_CLIENT_ID =
-# GOOGLE_CLIENT_SECRET =
-#
-# APPLE_CLIENT_ID =
-# APPLE_CLIENT_SECRET =
-#
-# TWITTER_CLIENT_ID =
-# TWITTER_CLIENT_SECRET =
-#
-# SPOTIFY_CLIENT_ID =
-# SPOTIFY_CLIENT_SECRET =
-#
 
 
 # from config.settings.cors import *  # noqa

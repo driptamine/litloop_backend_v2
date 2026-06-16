@@ -8,7 +8,7 @@ from django.contrib.auth import get_user_model
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.views import View
 
-from .providers import AppleProvider, GoogleProvider
+from .providers import GoogleProvider
 from .services import AccountService, JWTService
 
 logger = structlog.get_logger(__name__)
@@ -30,12 +30,6 @@ class GoogleAuthorizeView(AbstractAuthorizeView):
     @property
     def provider(self):
         return GoogleProvider
-
-
-class AppleAuthorizeView(AbstractAuthorizeView):
-    @property
-    def provider(self):
-        return AppleProvider
 
 
 class AbstractCallbackView(View):
@@ -87,24 +81,6 @@ class AbstractCallbackView(View):
 class GoogleCallbackView(AbstractCallbackView):
     def process_signup(self):
         return AccountService().sign_up_with_google(self.authorization_code)
-
-
-class AppleCallbackView(AbstractCallbackView):
-    def process_signup(self):
-        user_obj = self.request.POST.get("user", "{}")
-        try:
-            apple_user_data = json.loads(user_obj)
-        except json.JSONDecodeError:
-            error_msg = "Couldn't parse User data from Apple"
-            logger.error(error_msg, extra={"user_obj", user_obj})
-            raise Exception(error_msg)
-
-        first_name = apple_user_data.get("name", {}).get("firstName", "")
-        last_name = apple_user_data.get("name", {}).get("lastName", "")
-
-        return AccountService().sign_up_with_apple(
-            self.authorization_code, first_name=first_name, last_name=last_name
-        )
 
 
 class RefreshAccessTokenView(View):

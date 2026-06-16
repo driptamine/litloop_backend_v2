@@ -1,29 +1,19 @@
-# from __future__ import absolute_import
 from django.urls import path
-from artists.views import (
-    SearchArtistAPIView,
-    ArtistDetailAPIView,
-    ArtistAlbumsAPIView,
-    ArtistRelatedArtistsDetailAPIView,
-    ArtistListAPIView,
-    ArtistAPIView,
-
-    ArtistAlbumsOldAPIView,
-    # FeedAPIView,
+from artists.views.base_no_drf import (
+    artist_list_view,
+    artist_pagination_view,
+    artist_all_view,
+    search_artist_view,
+    artist_detail_view,
+    artist_albums_view,
 )
 
 urlpatterns = [
-    path('', ArtistListAPIView.as_view(), name="posts"),
-    path('search', SearchArtistAPIView.as_view(), name="search"),
-    # path('<int:id>', PostDetailAPIView.as_view(), name="post"),
-
-    path('<str:artist_uri>/upd', ArtistDetailAPIView.as_view(), name="artist_detail"),
-    path('<str:artist_uri>/', ArtistAPIView.as_view(), name="artist_detail"),
-
-    path('<str:artist_uri>/albums/upd', ArtistAlbumsAPIView.as_view(), name="artist_detail"),
-    path('<str:artist_uri>/albums/', ArtistAlbumsAPIView.as_view(), name="artist_detail"),
-    path('<str:artist_uri>/albums/old', ArtistAlbumsOldAPIView.as_view(), name="artist_detail"),
-
-    path('<str:artist_uri>/related_artists/', ArtistRelatedArtistsDetailAPIView.as_view(), name="artist_detail"),
-    path('<str:artist_uri>/related_artists/upd', ArtistRelatedArtistsDetailAPIView.as_view(), name="artist_detail"),
+    path('', artist_pagination_view, name="artists_list"),
+    path('all', artist_all_view, name="artists_all"),
+    path('search', search_artist_view, name="search"),
+    path('<str:artist_uri>/upd', artist_detail_view, name="artist_detail_upd"),
+    path('<str:artist_uri>/', artist_detail_view, name="artist_detail"),
+    path('<str:artist_uri>/albums/upd', artist_albums_view, name="artist_albums_upd"),
+    path('<str:artist_uri>/albums/', artist_albums_view, name="artist_albums"),
 ]

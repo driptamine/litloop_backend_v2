@@ -15,6 +15,7 @@ class Video(models.Model):
     visibility  = models.CharField(max_length=20, choices=VISIBILITY_CHOICES, default='private')
 
     s3_key      = models.CharField(max_length=400, null=True, blank=True)
+    gcs_key     = models.CharField(max_length=400, null=True, blank=True)
     filename    = models.CharField(max_length=400, null=True, blank=True)
     hls_s3      = models.CharField(max_length=400, null=True, blank=True)
 
@@ -32,7 +33,7 @@ class Video(models.Model):
     impressions = models.IntegerField(default=0)
 
     # song = models.ForeignKey(Song, on_delete=models.CASCADE, blank=True)
-    # user = models.ForeignKey('users.User', on_delete=models.CASCADE, blank=True)
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, null=True, blank=True)
 
 
 class VideoWatchProgress(models.Model):

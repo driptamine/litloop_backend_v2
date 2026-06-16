@@ -1,7 +1,9 @@
 from django.apps import apps
 from django.contrib import auth
+from django.conf import settings
 from rest_framework import serializers
 from rest_framework.exceptions import AuthenticationFailed
+from users.serializers import UserSerializer
 
 # import tracks.models as Track
 
@@ -9,7 +11,7 @@ from rest_framework.exceptions import AuthenticationFailed
 # from albums.models import Album
 # from .models import Track
 
- 
+
 
 Track = apps.get_model(app_label='tracks', model_name='Track')
 Artist = apps.get_model(app_label='artists', model_name='Artist')
@@ -38,6 +40,7 @@ class ArtistsSerializer(serializers.ModelSerializer):
 class TracksSerializer(serializers.ModelSerializer):
 
     artists = ArtistsSerializer(many=True)
+    user = UserSerializer(read_only=True)
     is_liked = serializers.SerializerMethodField()
     total_likes = serializers.SerializerMethodField()
     id = serializers.SerializerMethodField()
@@ -49,6 +52,7 @@ class TracksSerializer(serializers.ModelSerializer):
             'pk',
             'name',
             'track_uri',
+            'user',
             'is_liked',
             'total_likes',
             'artists',
@@ -61,12 +65,10 @@ class TracksSerializer(serializers.ModelSerializer):
         return obj.track_uri
 
     def get_is_liked(self, obj):
-
-        user = self.context.get('request').user
-        return likes_services.is_fan(obj, user)
+        return False
 
     def get_total_likes(self, obj):
-        return likes_services.get_object_likes_count(obj)
+        return 0
 
 
 class ImagesSerializer(serializers.ModelSerializer):
@@ -109,9 +111,11 @@ class AlbumSerializer(serializers.ModelSerializer):
 class TrackSerializer(serializers.ModelSerializer):
     artists = ArtistsSerializer(many=True)
     album = AlbumSerializer()
+    user = UserSerializer(read_only=True)
     is_liked = serializers.SerializerMethodField()
     total_likes = serializers.SerializerMethodField()
     id = serializers.SerializerMethodField()
+    gcs_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Track
@@ -120,28 +124,36 @@ class TrackSerializer(serializers.ModelSerializer):
             'pk',
             # 'uuid',
             'name',
+            'user',
+            's3_key',
+            'gcs_url',
+            'gcs_key',
             'track_uri',
             'track_number',
             'is_liked',
             'total_likes',
             'artists',
             'album',
-
-            # 'created_at',
-            # 'updated_at',
+            'created_at',
+            'updated_at',
+            'release_date',
         ]
+
 
     def get_id(self, obj):
 
         return obj.track_uri
 
     def get_is_liked(self, obj):
-
-        user = self.context.get('request').user
-        return likes_services.is_fan(obj, user)
+        return False
 
     def get_total_likes(self, obj):
-        return likes_services.get_object_likes_count(obj)
+        return 0
+
+    def get_gcs_url(self, obj):
+        if obj.gcs_key:
+            return f"https://storage.googleapis.com/{settings.GCS_BUCKET_NAME}/{obj.gcs_key}"
+        return None
 
 
 class AlbumSerializer(serializers.ModelSerializer):
@@ -170,36 +182,46 @@ class AlbumSerializer(serializers.ModelSerializer):
 class TrackListSerializer(serializers.ModelSerializer):
     artists = ArtistsSerializer(many=True)
     album = AlbumSerializer()
+    user = UserSerializer(read_only=True)
     is_liked = serializers.SerializerMethodField()
     total_likes = serializers.SerializerMethodField()
     id = serializers.SerializerMethodField()
+    gcs_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Track
         fields = [
             'id',
-            # 'pk',
+            'pk',
             # 'uuid',
             'name',
+            'user',
+            's3_key',
+            'gcs_url',
+            'gcs_key',
             'track_uri',
             'track_number',
             'is_liked',
             'total_likes',
             'artists',
             'album',
-
-            # 'created_at',
-            # 'updated_at',
+            'created_at',
+            'updated_at',
+            'release_date',
         ]
+
 
     def get_id(self, obj):
 
         return obj.track_uri
 
     def get_is_liked(self, obj):
-
-        user = self.context.get('request').user
-        return likes_services.is_fan(obj, user)
+        return False
 
     def get_total_likes(self, obj):
-        return likes_services.get_object_likes_count(obj)
+        return 0
+
+    def get_gcs_url(self, obj):
+        if obj.gcs_key:
+            return f"https://storage.googleapis.com/{settings.GCS_BUCKET_NAME}/{obj.gcs_key}"
+        return None

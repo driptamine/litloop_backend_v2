@@ -4,6 +4,8 @@ from django.db import transaction
 from django.core.management.utils import get_random_secret_key
 from django.utils import timezone
 
+from django.utils.crypto import get_random_string
+
 from users.models import User
 
 
@@ -66,6 +68,12 @@ def user_get_or_create(*, email, **extra_data):
 
     if user:
         return user, False
+
+    username = extra_data.get('username')
+    if username:
+        # Check if username exists for a different user
+        if User.objects.filter(username=username).exclude(email=email).exists():
+            extra_data['username'] = f"{username}_{get_random_string(5)}"
 
     return user_create(email=email, **extra_data), True
 

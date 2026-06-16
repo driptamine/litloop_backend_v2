@@ -5,13 +5,22 @@ class CorsMiddleware(object):
         self.get_response = get_response
 
     def __call__(self, request):
-        response = self.get_response(request)
-        if (request.method == "OPTIONS"  and "HTTP_ACCESS_CONTROL_REQUEST_METHOD" in request.META):
+        if request.method == "OPTIONS":
             response = http.HttpResponse()
             response["Content-Length"] = "0"
-            response["Access-Control-Max-Age"] = 86400
-        response["Access-Control-Allow-Origin"] = "*"
+            response["Access-Control-Max-Age"] = "0"
+        else:
+            response = self.get_response(request)
+
+        origin = request.META.get("HTTP_ORIGIN", "")
+        if origin:
+            response["Access-Control-Allow-Origin"] = origin
+            response["Access-Control-Allow-Credentials"] = "true"
+            response["Vary"] = "Origin"
+        else:
+            response["Access-Control-Allow-Origin"] = "*"
+
         response["Access-Control-Allow-Methods"] = "DELETE, GET, OPTIONS, PATCH, POST, PUT"
-        # response["Access-Control-Allow-Headers"] = "accept, accept-encoding, authorization, content-type, dnt, origin, user-agent, x-csrftoken, x-requested-with"
-        response["Access-Control-Allow-Headers"] = "*"
+        acrh = request.META.get("HTTP_ACCESS_CONTROL_REQUEST_HEADERS", "")
+        response["Access-Control-Allow-Headers"] = acrh or "accept, authorization, content-type, x-csrftoken, x-requested-with"
         return response

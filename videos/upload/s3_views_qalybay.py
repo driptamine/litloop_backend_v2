@@ -2,7 +2,8 @@ import boto3
 import json
 from django.conf import settings
 from django.http import JsonResponse
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from videos.models import Video
 from photos.models import Photo
 from tracks.models import Track
@@ -22,6 +23,7 @@ s3 = boto3.client(
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def create_presigned_url(request):
     """
     Step 1: Initiate multipart upload.
@@ -54,6 +56,7 @@ def create_presigned_url(request):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def get_presigned_url(request):
     """
     Step 2: Generate a presigned URL for a specific part number.
@@ -79,6 +82,7 @@ def get_presigned_url(request):
 
 
 @api_view(["POST"])
+@permission_classes([IsAuthenticated])
 def complete_upload(request):
     """
     Step 3: Finalize multipart upload.
@@ -124,7 +128,19 @@ def complete_upload(request):
     filename = key.split("/")[-1]
 
     try:
-        obj = model.objects.create(filename=filename, s3_key=key, status='draft')
+        obj = model.objects.create(filename=filename, s3_key=key, status='draft', user=request.user)
+        
+        album_id = data.get("album_id")
+        album_item_id = None
+        if album_id and media_type == 'photo':
+            try:
+                from photos.models import PhotoAlbum
+                album = PhotoAlbum.objects.get(id=album_id, user=request.user)
+                item = album.add_photo(obj)
+                if item:
+                    album_item_id = item.id
+            except (PhotoAlbum.DoesNotExist, ValueError):
+                pass
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -135,6 +151,7 @@ def complete_upload(request):
         return JsonResponse({
             "status": "completed",
             "id": obj.id,
+            "album_item_id": album_item_id,
             "location": cloudfront_url  # make sure this is defined above
         })
     except NameError as e:

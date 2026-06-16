@@ -9,6 +9,9 @@ class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         max_length=68, min_length=6, write_only=True
     )
+    username = serializers.CharField(
+        max_length=255, required=False, allow_blank=True, allow_null=True
+    )
 
     class Meta:
         model = User
@@ -20,12 +23,26 @@ class RegisterSerializer(serializers.ModelSerializer):
             'avatar',
         ]
 
-    def validate(self,attrs):
+    def validate(self, attrs):
         email = attrs.get('email', '')
-        username = attrs.get('username', '')
+        username = attrs.get('username')
 
+        if not username:
+            # Use email prefix as username
+            username = email.split('@')[0].replace('.', '_')
+            
+        # Handle username collision
+        import random
+        base_username = username
+        while User.objects.filter(username=username).exists():
+            username = f"{base_username}{random.randint(100, 999)}"
+        
         if not username.isalnum():
-            raise serializers.ValidationError('The username should only contain alphanumeric characters')
+            import re
+            username = re.sub(r'[^a-zA-Z0-9]', '', username)
+            
+        attrs['username'] = username
+            
         return attrs
 
     def create(self, validated_data):
@@ -45,7 +62,7 @@ class LoginSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(max_length=255, min_length=3,)
     password = serializers.CharField(max_length=68, min_length=6, write_only=True)
     username = serializers.CharField(max_length=255, min_length=3, read_only=True)
-    # avatar = serializers.FileField()
+    avatar = serializers.CharField(max_length=400, read_only=True)
     # tokens = serializers.CharField(max_length=68, read_only=True)
     access_token = serializers.CharField(max_length=68, read_only=True)
     refresh_token = serializers.CharField(max_length=68, read_only=True)
@@ -115,10 +132,10 @@ class UserSerializer(serializers.ModelSerializer):
             'email',
             'created_at',
             'updated_at',
-            'posts',
-            'posts_count',
-            'likes_count',
-            'views_count',
+            # 'posts',
+            # 'posts_count',
+            # 'likes_count',
+            # 'views_count',
         ]
     # class Meta:
     #     model = User

@@ -12,6 +12,7 @@ class Photo(Model):
 
     title       = columns.Text()
     s3_key      = columns.Text()
+    gcs_key     = columns.Text()
     filename    = columns.Text()
     photo_file  = columns.Text()
 

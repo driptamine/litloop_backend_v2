@@ -1,22 +1,35 @@
-# from __future__ import absolute_import
 from django.urls import path
-from chats.views import chat_with_gemini
-# from messages.views import (
-#     ChatDetailAPIView,
-#     ChatOffsetAPIView,
-# )
-
+from chats.views import (
+    chat_list, chat_detail, send_message, chat_with_gemini, 
+    create_chat, get_or_create_direct_chat, my_chats, delete_chat, mark_as_read,
+    upload_chat_attachment, get_ice_servers_api, voice_message_upload_api
+)
 
 urlpatterns = [
+    # VoIP / WebRTC
+    path('ice_servers/', get_ice_servers_api, name='ice_servers'),
 
-    # path('room/<str:chat_uri>/', ChatDetailAPIView.as_view(), name="album_detail"),
-    # path('room/<str:chat_uri>/page', ChatOffsetAPIView.as_view(), name="album_detail"),
+    # Voice Messages
+    path('voice/upload/', voice_message_upload_api, name='voice_upload'),
 
-    # path('index/', index, name='index'),
-    # path('index/<int:room_name>/', room, name='room'),
-    # path('room/', RoomListView.as_view(), name='room-list'),
-    # path('room/<int:pk>/', RoomDetailView.as_view(), name='room-detail'),
-    # path('participant/', ParticipantListView.as_view(), name='participant-list'),
-    # path('participant/<int:pk>/', ParticipantDetailView.as_view(), name='participant-detail'),
-    path("gemini/", chat_with_gemini),
+    # Room Management
+    path('', chat_list, name='chat_list'),
+    path('me/', my_chats, name='my_chats'),
+    path('create/', create_chat, name='create_chat'),
+    path('<int:chat_id>/', chat_detail, name='chat_detail'),
+    path('<int:chat_id>/read/', mark_as_read, name='mark_as_read'),
+    path('<int:chat_id>/read', mark_as_read),
+    path('<int:chat_id>/delete/', delete_chat, name='delete_chat'),
+    path('<int:chat_id>/delete', delete_chat),
+    path('<int:chat_id>/send/', send_message, name='send_message'),
+    path('<int:chat_id>/send', send_message),
+    
+    # Upload
+    path('upload/', upload_chat_attachment, name='chat_upload_attachment'),
+    
+    # User-to-User DM approach
+    path('u/<int:user_id>/', get_or_create_direct_chat, name='user_direct_chat'),
+    
+    # AI Assistant
+    path("gemini/", chat_with_gemini, name='chat_with_gemini'),
 ]

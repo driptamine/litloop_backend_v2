@@ -14,6 +14,7 @@ class Video(Model):
     description  = columns.Text()
 
     s3_key       = columns.Text()
+    gcs_key      = columns.Text()
     filename     = columns.Text()
     video_file   = columns.Text()
     thumbnail    = columns.Text()

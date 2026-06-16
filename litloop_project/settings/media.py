@@ -27,12 +27,4 @@ VIDEO_CHUNKS_DURATION = 60 * 4
 # always get these two, even if upscaling
 MINIMUM_RESOLUTIONS_TO_ENCODE = [240, 360]
 
-# this is for fineuploader - media uploads
-UPLOAD_DIR = "uploads/"
-CHUNKS_DIR = "chunks/"
-
-# number of files to upload using fineuploader at once
-UPLOAD_MAX_FILES_NUMBER = 100
-CONCURRENT_UPLOADS = True
-CHUNKS_DONE_PARAM_NAME = "done"
 FILE_STORAGE = "django.core.files.storage.DefaultStorage"

@@ -5,6 +5,7 @@ from urllib.parse import urlencode
 from rest_framework import status, serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from django.urls import reverse
 from django.conf import settings
@@ -19,9 +20,7 @@ from users.services import user_record_login, user_change_secret_key, user_get_o
 from .services import (
     jwt_login,
     google_get_access_token,
-    twitch_get_access_token,
     google_get_user_info,
-    twitch_get_user_info
 )
 
 
@@ -38,26 +37,6 @@ def redirect_to_google_oauth_url(self):
     ]
     oauth_redirect_url = f'{url}?response_type={response_type}&client_id={client_id}&redirect_uri={redirect_uri}&prompt={prompt}&access_type={access_type}&scope={scope}'
     return redirect(oauth_redirect_url)
-
-
-def spotify_callback(request, format=None):
-    code = request.GET.get('code')
-    error = request.GET.get('error')
-
-    redirect_uri = "http://localhost:3001/auth/spotify/callback"
-    access_token = spotify_get_access_token(code=code, redirect_uri=redirect_uri)
-
-    user_data = google_get_user_info(access_token=access_token)
-
-    profile_data = {
-        'email': user_data['email'],
-        'avatar': user_data['picture'],
-        'username': user_data['given_name']
-
-    }
-    user, _ = user_get_or_create(**profile_data)
-
-    return user
 
 
 class GoogleLoginApiOld(APIView):
@@ -119,51 +98,60 @@ class GoogleLoginApiOld(APIView):
 
 class GoogleLoginApi(APIView):
     class InputSerializer(serializers.Serializer):
-        code = serializers.CharField(required=False)
-        error = serializers.CharField(required=False)
+        code = serializers.CharField(required=True)
+        # error = serializers.CharField(required=False)
 
-    def put(self, request, *args, **kwargs):
-        code = request.data.get('code', False)
+    def post(self, request, *args, **kwargs):
+        input_serializer = self.InputSerializer(data=request.data)
+        input_serializer.is_valid(raise_exception=True)
 
-        redirect_uri = "http://localhost:3001/auth/google/callback"
-        access_token = google_get_access_token(code=code, redirect_uri=redirect_uri)
+        validated_data = input_serializer.validated_data
+        code = validated_data.get('code')
 
-        # user_data = twitch_get_user_info(access_token=access_token)
-        #
-        # profile_data = {
-        #     'email': user_data['email'],
-        #     'avatar': user_data['picture'],
-        #     'username': user_data['given_name']
-        # }
-        #
-        # # We use get-or-create logic here for the sake of the example.
-        # # We don't have a sign-up flow.
-        # user, _ = user_get_or_create(**profile_data)
+        # Determine redirect_uri based on origin or settings
+        origin = request.META.get('HTTP_ORIGIN', '')
+        if origin == 'https://litloop.netlify.app':
+            redirect_uri = "https://litloop.netlify.app/auth/google/callback"
+        elif origin == 'http://localhost:3000':
+            redirect_uri = "http://localhost:3000/auth/google/callback"
+        elif origin == 'http://localhost:3001':
+            redirect_uri = "http://localhost:3001/auth/google/callback"
+        else:
+            redirect_uri = getattr(settings, 'GOOGLE_OAUTH_REDIRECT_URI', "http://localhost:3001/auth/google/callback")
 
-        return Response(access_token)
+        try:
+            token_data = google_get_access_token(code=code, redirect_uri=redirect_uri)
+            access_token = token_data.get('access_token')
+            
+            if not access_token:
+                return Response({'error': 'Failed to obtain access token'}, status=status.HTTP_400_BAD_REQUEST)
+
+            user_data = google_get_user_info(access_token=access_token)
+            
+            profile_data = {
+                'email': user_data['email'],
+                'avatar': user_data.get('picture', ''),
+                'username': user_data.get('given_name', user_data['email'].split('@')[0].replace('.', '_'))
+            }
+
+            user, created = user_get_or_create(**profile_data)
+            
+            # Generate tokens
+            refresh = RefreshToken.for_user(user)
+            
+            return Response({
+                'user': {
+                    'id': user.id,
+                    'email': user.email,
+                    'username': user.username,
+                    'avatar': user.avatar,
+                },
+                'access': str(refresh.access_token),
+                'refresh': str(refresh),
+                'created': created
+            })
+
+        except Exception as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-class TwitchLoginApi(APIView):
-    class InputSerializer(serializers.Serializer):
-        code = serializers.CharField(required=False)
-        error = serializers.CharField(required=False)
-
-    def put(self, request, *args, **kwargs):
-        code = request.data.get('code', False)
-
-        redirect_uri = "http://localhost:3001/auth/twitch/callback"
-        access_token = twitch_get_access_token(code=code, redirect_uri=redirect_uri)
-
-        # user_data = twitch_get_user_info(access_token=access_token)
-        #
-        # profile_data = {
-        #     'email': user_data['email'],
-        #     'avatar': user_data['picture'],
-        #     'username': user_data['given_name']
-        # }
-        #
-        # # We use get-or-create logic here for the sake of the example.
-        # # We don't have a sign-up flow.
-        # user, _ = user_get_or_create(**profile_data)
-
-        return Response(access_token)

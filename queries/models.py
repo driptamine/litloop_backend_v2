@@ -26,6 +26,11 @@ class BraveQuery(models.Model):
 class GoogleQuery(models.Model):
     query_text = models.CharField(max_length=255, blank=True, null=True)
     suggestion = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('query_text', 'suggestion')
 
 class BingQuery(models.Model):
     query_text = models.CharField(max_length=255, blank=True, null=True)

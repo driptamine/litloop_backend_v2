@@ -6,7 +6,17 @@ from attrs import define
 
 import boto3
 
-from styleguide_example.common.utils import assert_settings
+from django.conf import settings
+from django.core.exceptions import ImproperlyConfigured
+
+def assert_settings(required_settings, error_message):
+    config = {}
+    for setting in required_settings:
+        value = getattr(settings, setting, None)
+        if value is None:
+            raise ImproperlyConfigured(f"{error_message} Missing: {setting}")
+        config[setting] = value
+    return config
 
 
 @define

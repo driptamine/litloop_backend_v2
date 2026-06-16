@@ -81,12 +81,10 @@ class AlbumsSerializer(serializers.ModelSerializer):
         return obj.album_uri
 
     def get_is_liked(self, obj):
-        user = self.context.get('request').user
-        # user = self.context['request'].user
-        return likes_services.is_fan(obj, user)
+        return False
 
     def get_total_likes(self, obj):
-        return likes_services.get_object_likes_count(obj)
+        return 0
 
 
 class ArtistSerializer(serializers.ModelSerializer):

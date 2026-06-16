@@ -3,10 +3,9 @@ from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
 
-from rest_framework import permissions
-from drf_yasg.views import get_schema_view
-from drf_yasg import openapi
 from uploader.channels import TaskProgressConsumer
+from chats.consumers import ChatConsumer
+from notifications.consumers import NotificationConsumer
 
 # from users import views as users_views
 # from posts import views as posts_views
@@ -17,29 +16,40 @@ from uploader.channels import TaskProgressConsumer
 
 # from uploader.websocket.websocket_views import GetHitmen, StartNewHitJob, ScheduleNewHitJob, CreateUserView
 
-schema_view = get_schema_view(
-   openapi.Info(title="LitLoop API", default_version='v1',),
-   public=True,
-   permission_classes=(permissions.AllowAny,),
+from posts.views.user_posts_no_drf import user_posts_view
+from litloop_project.maintenance_views import (
+    DeleteAllTablesView, RegenerateAllView, 
+    DeleteUserTablesView, RegenerateUserTablesView,
+    DeleteChatTablesView, RegenerateChatTablesView
 )
 
 urlpatterns = [
+    # Maintenance endpoints
+    path('maintenance/delete-tables/', DeleteAllTablesView.as_view(), name='maintenance-delete-tables'),
+    path('maintenance/regenerate/', RegenerateAllView.as_view(), name='maintenance-regenerate'),
+    
+    path('maintenance/delete-user-tables/', DeleteUserTablesView.as_view(), name='maintenance-delete-user-tables'),
+    path('maintenance/regenerate-user-tables/', RegenerateUserTablesView.as_view(), name='maintenance-regenerate-user-tables'),
+    
+    path('maintenance/delete-chat-tables/', DeleteChatTablesView.as_view(), name='maintenance-delete-chat-tables'),
+    path('maintenance/regenerate-chat-tables/', RegenerateChatTablesView.as_view(), name='maintenance-regenerate-chat-tables'),
+
     # path('/', include('media.urls')),
     path('admin/', admin.site.urls),
     path('auth/', include('auth_cookie.urls')),
 
-    path('fu/', include("uploader.urls", namespace='fineuploader')),
     path('ws/', include("uploader.urls", namespace='websocket')),
 
     path('users/', include('users.urls')),
     path('videos/', include('videos.urls')),
-    path('links/', include('links.urls')),
+
     # path('media/', include('media.urls')),
 
     path('posts/', include('posts.urls')),
     path('artist/', include('artists.urls')),
     path('album/', include('albums.urls')),
-    path('track/', include('tracks.urls')),
+    path('tracks/', include('tracks.urls')),
+    path('photos/', include('photos.urls')),
     path('playlist/', include('playlists.urls')),
     path('views/', include('views.urls')),
     path('movies/', include('movies.urls')),
@@ -47,18 +57,15 @@ urlpatterns = [
     path('queries/', include('queries.urls')),
     path('websites/', include('websites.urls')),
     path('chats/', include('chats.urls')),
+    path('jobs/', include('jobs.urls')),
 
-    # path('v1/', include()),
+    path('comments/', include('comments.urls')),
 
-    # progress bar
-    # path("hitmen/all", GetHitmen.as_view()),
-    # path("hitmen/start-job", StartNewHitJob.as_view()),
-    # path("hitmen/schedule", ScheduleNewHitJob.as_view()),
+    path('links/', include('links.urls')),
+    path('notes/', include('notes.urls')),
+    path('todos/', include('todos.urls')),
 
-    # Documentation
-    path("swagger(<format>\.json|\.yaml)", schema_view.without_ui(cache_timeout=0)),
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    path('<str:username>/posts/', user_posts_view, name='user-username-posts'),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
@@ -68,4 +75,6 @@ websocket_urlpatterns = [
     # path("task/transcoding/<str:taskID>/", TaskProgressConsumer.as_asgi()),
 
     path("task/progress/<str:taskID>/", TaskProgressConsumer.as_asgi()),
+    path("ws/chat/<int:chat_id>/", ChatConsumer.as_asgi()),
+    path("ws/notifications/", NotificationConsumer.as_asgi()),
 ]
