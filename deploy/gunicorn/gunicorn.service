@@ -5,16 +5,15 @@ After=network.target
 [Service]
 User=driptamine
 Group=www-data
-UMask=0002
 WorkingDirectory=/home/driptamine/litloop_backend_v2
-
 Environment=DJANGO_SETTINGS_MODULE=litloop_project.settings.prod
 
-ExecStartPre=/bin/rm -f /home/driptamine/litloop_backend_v2/deploy/gunicorn/gunicorn.sock
+# Listen on a TCP port instead of a Unix socket for better reliability
 ExecStart=/home/driptamine/litloop_backend_v2/env/bin/daphne \
     -v 2 \
     --proxy-headers \
-    -u /home/driptamine/litloop_backend_v2/deploy/gunicorn/gunicorn.sock \
+    -b 127.0.0.1 \
+    -p 8000 \
     litloop_project.asgi:application
 
 Restart=always
