@@ -62,6 +62,7 @@ echo "🌐 Configuring Nginx..."
 sed -i "s|/home/driptamine/litloop_backend_v2|$(pwd)|g" deploy/nginx/django.conf
 sudo cp deploy/nginx/django.conf /etc/nginx/sites-available/litloop.conf
 sudo ln -sf /etc/nginx/sites-available/litloop.conf /etc/nginx/sites-enabled/litloop.conf
+sudo rm -f /etc/nginx/sites-enabled/default
 sudo nginx -t && sudo systemctl restart nginx
 
 echo "✅ Deployment complete!"

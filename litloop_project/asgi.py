@@ -23,12 +23,15 @@ django_asgi_app = get_asgi_application()
 
 from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
+from channels.security.websocket import AllowedHostsOriginValidator
 from .urls import websocket_urlpatterns
 from .middleware.channels_auth import JWTAuthMiddleware
 
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
-        "websocket": JWTAuthMiddleware(AuthMiddlewareStack(URLRouter(websocket_urlpatterns))),
+        "websocket": AllowedHostsOriginValidator(
+            JWTAuthMiddleware(AuthMiddlewareStack(URLRouter(websocket_urlpatterns)))
+        ),
     }
 )

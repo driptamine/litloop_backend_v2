@@ -12,6 +12,8 @@ Environment=DJANGO_SETTINGS_MODULE=litloop_project.settings.prod
 
 ExecStartPre=/bin/rm -f /home/driptamine/litloop_backend_v2/deploy/gunicorn/gunicorn.sock
 ExecStart=/home/driptamine/litloop_backend_v2/env/bin/daphne \
+    -v 2 \
+    --proxy-headers \
     -u /home/driptamine/litloop_backend_v2/deploy/gunicorn/gunicorn.sock \
     litloop_project.asgi:application
 
