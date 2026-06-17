@@ -3,7 +3,7 @@ Description=daphne ASGI daemon for Django project (with WebSocket support)
 After=network.target
 
 [Service]
-User=ubuntu
+User=driptamine
 Group=www-data
 UMask=0002
 WorkingDirectory=/home/driptamine/litloop_backend_v2
