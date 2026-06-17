@@ -27,21 +27,14 @@ jobs:
 
     - name: Create .env file
       run: |
-        echo "DJANGO_SETTINGS_MODULE=litloop_project.settings.prod" >> .env
-        echo "SECRET_KEY=${{ secrets.SECRET_KEY }}" >> .env
-        echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
-        echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-        echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-        echo "DB_HOST=${{ secrets.DB_HOST }}" >> .env
-        echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
-        echo "GCS_HMAC_ACCESS_KEY=${{ secrets.GCS_HMAC_ACCESS_KEY }}" >> .env
-        echo "GCS_HMAC_SECRET=${{ secrets.GCS_HMAC_SECRET }}" >> .env
-        echo "GCS_PROJECT_ID=${{ secrets.GCS_PROJECT_ID }}" >> .env
-        echo "GCS_BUCKET_NAME=${{ secrets.GCS_BUCKET_NAME }}" >> .env
-        echo "GOOGLE_GEMINI_API_KEY=${{ secrets.GOOGLE_GEMINI_API_KEY }}" >> .env
+        echo "${{ secrets.ENV_FILE }}" > .env
 
     - name: Deploy to Server
       run: |
+        if [ -z "${{ secrets.GCP_USER }}" ] || [ -z "${{ secrets.GCE_PUBLIC_IP }}" ]; then
+          echo "Error: GCP_USER or GCE_PUBLIC_IP secret is missing."
+          exit 1
+        fi
         ssh ${{ secrets.GCP_USER }}@${{ secrets.GCE_PUBLIC_IP }} "mkdir -p ~/litloop_backend_v2"
         rsync -avz --exclude '.git' --exclude 'env' --exclude 'venv' --exclude 'venv_3.9' --exclude '__pycache__' --exclude 'uploaded_media' --exclude 'static' ./ ${{ secrets.GCP_USER }}@${{ secrets.GCE_PUBLIC_IP }}:~/litloop_backend_v2/
         ssh ${{ secrets.GCP_USER }}@${{ secrets.GCE_PUBLIC_IP }} "cd ~/litloop_backend_v2 && bash deploy/deploy_script.sh"
