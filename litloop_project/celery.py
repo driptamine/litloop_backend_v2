@@ -4,7 +4,7 @@ import os
 
 from celery import Celery
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "litloop_project.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "litloop_project.settings.dev")
 
 broker_url = "amqp://localhost:5672"
 BROKER_URL = os.environ.get('RABBITMQ_URL', 'amqp://guest:guest@localhost:5672/')
