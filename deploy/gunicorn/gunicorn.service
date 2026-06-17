@@ -3,13 +3,13 @@ Description=daphne ASGI daemon for Django project (with WebSocket support)
 After=network.target
 
 [Service]
-User=driptamine
+User=ubuntu
 Group=www-data
-WorkingDirectory=/home/driptamine/litloop_backend_v2
+WorkingDirectory=/home/ubuntu/litloop_backend_v2
 Environment=DJANGO_SETTINGS_MODULE=litloop_project.settings.prod
 
 # Listen on a TCP port instead of a Unix socket for better reliability
-ExecStart=/home/driptamine/litloop_backend_v2/env/bin/daphne \
+ExecStart=/home/ubuntu/litloop_backend_v2/env/bin/daphne \
     -v 2 \
     --proxy-headers \
     -b 127.0.0.1 \
