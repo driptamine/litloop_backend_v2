@@ -34,7 +34,7 @@ class Post(models.Model):
 
 
 class Photo(models.Model):
-    image_file = models.ImageField(upload_to='post/images')
+    image_file = models.FileField(upload_to='post/images')
     title = models.TextField(blank=True,null=True)
     description = models.TextField(blank=True,null=True)
 
@@ -69,6 +69,6 @@ class Comment(models.Model):
     author = models.ForeignKey(UserModel, on_delete=models.CASCADE)
     answer_to = models.ForeignKey('self', null=True, default=None, on_delete=models.CASCADE)
     content = models.TextField()
-    image = models.ImageField(upload_to='comments/images', null=True, default=None)
+    image = models.FileField(upload_to='comments/images', null=True, default=None)
     video = models.FileField(upload_to='comments/videos', null=True, default=None)
     track = models.FileField(upload_to='comments/tracks', null=True, default=None)

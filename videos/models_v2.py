@@ -31,7 +31,7 @@ class Video(models.Model):
     description = models.TextField()
 
     video_file = models.FileField(upload_to="videos",validators=[validate_mp4_extension])
-    thumbnail = models.ImageField(upload_to="thumbnails",null=True,blank=True)
+    thumbnail = models.FileField(upload_to="thumbnails",null=True,blank=True)
     duration = models.CharField(max_length=20, blank=True,null=True)
     hls_file = models.CharField(max_length=500,blank=True,null=True)
 

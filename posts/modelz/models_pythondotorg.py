@@ -88,7 +88,7 @@ class Photo(ContentManageable):
         null=True,
         on_delete=models.CASCADE,
     )
-    image = models.ImageField(upload_to='community/photos/', blank=True)
+    image = models.FileField(upload_to='community/photos/', blank=True)
     image_url = models.URLField('Image URL', max_length=1000, blank=True)
     caption = models.TextField(blank=True)
     click_through_url = models.URLField(blank=True)

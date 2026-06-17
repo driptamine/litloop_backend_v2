@@ -153,7 +153,7 @@ class Advertisement(TimeStampedModel, IndestructibleModel):
             "The publisher will be added in the 'ea-publisher' query parameter."
         ),
     )
-    image = models.ImageField(
+    image = models.FileField(
         _("Image"),
         max_length=255,
         upload_to="images/%Y/%m/",

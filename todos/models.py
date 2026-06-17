@@ -3,7 +3,7 @@ from users.models import User
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    background_image = models.ImageField(upload_to='backgrounds/', blank=True, null=True)
+    background_image = models.FileField(upload_to='backgrounds/', blank=True, null=True)
 
 
 class Todo(models.Model):

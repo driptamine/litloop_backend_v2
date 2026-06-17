@@ -10,8 +10,8 @@ class BlogPost (models.Model):
     date = models.DateTimeField(auto_now=False, auto_now_add=True)
 
 
-class BlogImage (models.Model):
-    image = models.ImageField(upload_to='post/images')
+class Photo(models.Model):
+    image = models.FileField(upload_to='post/images')
     blog_post = models.ForeignKey(BlogPost, on_delete=models.CASCADE)
 
 
@@ -30,6 +30,6 @@ class Comment (models.Model):
     author = models.ForeignKey(UserModel, on_delete=models.CASCADE)
     answer_to = models.ForeignKey('self', null=True, default=None, on_delete=models.CASCADE)
     content = models.TextField()
-    image = models.ImageField(upload_to='comments/images', null=True, default=None)
+    image = models.FileField(upload_to='comments/images', null=True, default=None)
     video = models.FileField(upload_to='comments/videos', null=True, default=None)
     track = models.FileField(upload_to='comments/tracks', null=True, default=None)

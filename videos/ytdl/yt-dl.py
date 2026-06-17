@@ -39,7 +39,7 @@ class Podcast(models.Model):
     slug = models.SlugField(max_length=100, unique=True)
     playlist_url = models.URLField(blank=True)
     description = models.TextField(blank=True)
-    image = models.ImageField(upload_to=podcast_media_path, blank=True)
+    image = models.FileField(upload_to=podcast_media_path, blank=True)
     pub_date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -156,7 +156,7 @@ class Episode(models.Model):
     pub_date = models.DateTimeField(blank=True, null=True)
     duration = models.DurationField(blank=True, null=True)
     invalid = models.BooleanField(default=False)
-    image = models.ImageField(upload_to=episode_media_path, blank=True)
+    image = models.FileField(upload_to=episode_media_path, blank=True)
 
     # Foreign Key is associated podcast
     podcast = models.ForeignKey(Podcast, on_delete=models.CASCADE)
