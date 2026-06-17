@@ -1,12 +1,13 @@
 import json
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
+from django.contrib.auth.models import AnonymousUser
 from .models import Chat, Message, VoiceMessage
 from users.models import User
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
-        self.user = self.scope["user"]
+        self.user = self.scope.get("user", AnonymousUser())
         self.chat_id = self.scope['url_route']['kwargs']['chat_id']
         self.room_group_name = f'chat_{self.chat_id}'
 

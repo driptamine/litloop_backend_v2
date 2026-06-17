@@ -1,9 +1,11 @@
 import json
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from django.contrib.auth.models import AnonymousUser
 
 class NotificationConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
-        if self.scope["user"].is_authenticated:
+        user = self.scope.get("user", AnonymousUser())
+        if user.is_authenticated:
             self.user_id = self.scope["user"].id
             self.room_group_name = f'user_{self.user_id}_notifications'
 
