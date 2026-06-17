@@ -49,14 +49,20 @@ chmod +x $(pwd)/deploy
 chmod +x $(pwd)/deploy/gunicorn
 
 # Set up Daphne (ASGI server for WebSocket support)
-echo "🚦 Configuring Daphne..."
-# Update WorkingDirectory and ExecStart in gunicorn.service if necessary
+echo "🚦 Configuring Daphne (WebSockets)..."
 sed -i "s|/home/driptamine/litloop_backend_v2|$(pwd)|g" deploy/gunicorn/gunicorn.service
-sed -i "s|User=ubuntu|User=$USER|g" deploy/gunicorn/gunicorn.service
+sed -i "s|User=driptamine|User=$USER|g" deploy/gunicorn/gunicorn.service
 sudo cp deploy/gunicorn/gunicorn.service /etc/systemd/system/daphne.service
+
+# Set up Gunicorn (WSGI server for HTTP performance)
+echo "🚦 Configuring Gunicorn (HTTP)..."
+sed -i "s|/home/driptamine/litloop_backend_v2|$(pwd)|g" deploy/gunicorn/gunicorn_http.service
+sed -i "s|User=driptamine|User=$USER|g" deploy/gunicorn/gunicorn_http.service
+sudo cp deploy/gunicorn/gunicorn_http.service /etc/systemd/system/gunicorn_http.service
+
 sudo systemctl daemon-reload
-sudo systemctl enable daphne
-sudo systemctl restart daphne
+sudo systemctl enable daphne gunicorn_http
+sudo systemctl restart daphne gunicorn_http
 
 # Set up Nginx
 echo "🌐 Configuring Nginx..."
