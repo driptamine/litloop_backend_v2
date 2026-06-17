@@ -5,7 +5,6 @@ import os
 GOOGLE_OAUTH_REDIRECT_URI = "http://localhost:3001/auth/google/callback"
 
 # DEVELOPMENT SETTINGS
-# Neon/Production database should NOT be used here.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
