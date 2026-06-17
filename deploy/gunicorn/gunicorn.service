@@ -17,7 +17,6 @@ ExecStart=/home/driptamine/litloop_backend_v2/env/bin/daphne \
     -u /home/driptamine/litloop_backend_v2/deploy/gunicorn/gunicorn.sock \
     litloop_project.asgi:application
 
-
 Restart=always
 
 [Install]
