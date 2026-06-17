@@ -39,6 +39,13 @@ echo "📂 Running migrations..."
 python manage.py migrate --noinput
 python manage.py collectstatic --noinput
 
+# Fix permissions for Nginx to access the socket
+echo "🔑 Adjusting permissions for Nginx..."
+chmod +x /home/$USER
+chmod +x $(pwd)
+chmod +x $(pwd)/deploy
+chmod +x $(pwd)/deploy/gunicorn
+
 # Set up Daphne (ASGI server for WebSocket support)
 echo "🚦 Configuring Daphne..."
 # Update WorkingDirectory and ExecStart in gunicorn.service if necessary
