@@ -7,6 +7,26 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+# Sanitize DATABASE_URL globally to avoid "channel binding" and "SNI" errors with Neon/GCP
+_db_url = os.environ.get('DATABASE_URL')
+if _db_url:
+    import re
+    # 1. Remove channel_binding parameters
+    if 'channel_binding=' in _db_url:
+        _db_url = re.sub(r'[?&]channel_binding=[^&]+', '', _db_url)
+    
+    # 2. Handle Neon SNI / Endpoint ID requirements
+    # If it's a neon.tech URL and doesn't have the endpoint option, add it
+    if 'neon.tech' in _db_url and 'options=endpoint' not in _db_url:
+        # Extract endpoint ID from host (e.g., ep-xxx.us-east-1.aws.neon.tech)
+        match = re.search(r'@([^.]+)', _db_url)
+        if match:
+            endpoint_id = match.group(1)
+            separator = '&' if '?' in _db_url else '?'
+            _db_url += f"{separator}options=endpoint%3D{endpoint_id}"
+    
+    os.environ['DATABASE_URL'] = _db_url
+
 AUTHENTICATION_BACKENDS = [
     'users.backends.EmailOrUsernameBackend',  # your custom backend
     'django.contrib.auth.backends.ModelBackend',  # optional fallback

@@ -1,16 +1,38 @@
-from .settings import *  # noqa
+import os
+import dj_database_url
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+from .settings.base import *  # noqa
 
 DEBUG = False
-DATABASES["default"] = {
-    'ENGINE': 'django.db.backends.postgresql',
-    'NAME': env("DB_NAME"),
-    'USER': env("DB_USER"),
-    'PASSWORD': env("DB_PASSWORD"),
-    'HOST': env("DB_HOST"),
-    'PORT': '5432',
-}
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv("DB_NAME"),
+            'USER': os.getenv("DB_USER"),
+            'PASSWORD': os.getenv("DB_PASSWORD"),
+            'HOST': os.getenv("DB_HOST"),
+            'PORT': '5432',
+        }
+    }
+
 DATABASES["default"]["ATOMIC_REQUESTS"] = True  # noqa F405
-DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=60)  # noqa F405
+# ... (rest of the file)
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=False)
 
