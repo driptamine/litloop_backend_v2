@@ -6,13 +6,13 @@ After=network.target
 User=ubuntu
 Group=www-data
 UMask=0002
-WorkingDirectory=/home/ubuntu/litloop_backend_v2
+WorkingDirectory=/home/driptamine/litloop_backend_v2
 
 Environment=DJANGO_SETTINGS_MODULE=litloop_project.settings.prod
 
-ExecStartPre=/bin/rm -f /home/ubuntu/litloop_backend_v2/deploy/gunicorn/gunicorn.sock
-ExecStart=/home/ubuntu/litloop_backend_v2/env/bin/daphne \
-    -u /home/ubuntu/litloop_backend_v2/deploy/gunicorn/gunicorn.sock \
+ExecStartPre=/bin/rm -f /home/driptamine/litloop_backend_v2/deploy/gunicorn/gunicorn.sock
+ExecStart=/home/driptamine/litloop_backend_v2/env/bin/daphne \
+    -u /home/driptamine/litloop_backend_v2/deploy/gunicorn/gunicorn.sock \
     litloop_project.asgi:application
 
 

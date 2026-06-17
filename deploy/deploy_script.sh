@@ -49,7 +49,7 @@ chmod +x $(pwd)/deploy/gunicorn
 # Set up Daphne (ASGI server for WebSocket support)
 echo "🚦 Configuring Daphne..."
 # Update WorkingDirectory and ExecStart in gunicorn.service if necessary
-sed -i "s|/home/ubuntu/litloop_backend_v2|$(pwd)|g" deploy/gunicorn/gunicorn.service
+sed -i "s|/home/driptamine/litloop_backend_v2|$(pwd)|g" deploy/gunicorn/gunicorn.service
 sed -i "s|User=ubuntu|User=$USER|g" deploy/gunicorn/gunicorn.service
 sudo cp deploy/gunicorn/gunicorn.service /etc/systemd/system/daphne.service
 sudo systemctl daemon-reload
@@ -59,7 +59,7 @@ sudo systemctl restart daphne
 # Set up Nginx
 echo "🌐 Configuring Nginx..."
 # Update paths in nginx config if necessary
-sed -i "s|/home/ubuntu/litloop_backend_v2|$(pwd)|g" deploy/nginx/django.conf
+sed -i "s|/home/driptamine/litloop_backend_v2|$(pwd)|g" deploy/nginx/django.conf
 sudo cp deploy/nginx/django.conf /etc/nginx/sites-available/litloop.conf
 sudo ln -sf /etc/nginx/sites-available/litloop.conf /etc/nginx/sites-enabled/litloop.conf
 sudo nginx -t && sudo systemctl restart nginx
