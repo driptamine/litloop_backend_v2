@@ -1,5 +1,5 @@
 [Unit]
-Description=daphne ASGI daemon for Django project (with WebSocket support)
+Description=Daphne ASGI daemon for LitLoop (WebSockets only)
 After=network.target
 
 [Service]
@@ -8,7 +8,7 @@ Group=www-data
 WorkingDirectory=/home/driptamine/litloop_backend_v2
 Environment=DJANGO_SETTINGS_MODULE=litloop_project.settings.prod
 
-# Listen on a TCP port instead of a Unix socket for better reliability
+# Dedicated Daphne for WebSockets on port 8000
 ExecStart=/home/driptamine/litloop_backend_v2/env/bin/daphne \
     -v 2 \
     --proxy-headers \
@@ -20,3 +20,4 @@ Restart=always
 
 [Install]
 WantedBy=multi-user.target
+
