@@ -57,7 +57,7 @@ if os.environ.get('ENVIRONMENT') == 'development':
     ALLOWED_HOSTS=['*']
 else:
     DEBUG = False
-    ALLOWED_HOSTS=['*', 'https://litloop.netlify.app', 'litloop.duckdns.org']
+    ALLOWED_HOSTS=['*', 'litloop.netlify.app', 'litloop.duckdns.org']
 
 # ALLOWED_HOSTS=['*']
 
