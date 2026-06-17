@@ -41,6 +41,8 @@ python manage.py collectstatic --noinput
 
 # Fix permissions for Nginx to access the socket
 echo "🔑 Adjusting permissions for Nginx..."
+sudo touch /var/log/nginx/ws_access.log
+sudo chown www-data:www-data /var/log/nginx/ws_access.log
 chmod +x /home/$USER
 chmod +x $(pwd)
 chmod +x $(pwd)/deploy

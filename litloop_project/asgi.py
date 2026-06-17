@@ -30,8 +30,6 @@ from .middleware.channels_auth import JWTAuthMiddleware
 application = ProtocolTypeRouter(
     {
         "http": django_asgi_app,
-        "websocket": AllowedHostsOriginValidator(
-            JWTAuthMiddleware(AuthMiddlewareStack(URLRouter(websocket_urlpatterns)))
-        ),
+        "websocket": URLRouter(websocket_urlpatterns),
     }
 )
