@@ -30,7 +30,6 @@ psycopg2-binary
 python-dotenv
 py-deezer
 selenium
-spotipy
 undetected-chromedriver
 uwsgi
 webdriver-manager

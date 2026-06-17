@@ -9,32 +9,45 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Set up SSH
+    - name: Save SSH private key
       run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY_GCP }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        if [ -n "${{ secrets.GCE_PUBLIC_IP }}" ]; then
-          ssh-keyscan -H ${{ secrets.GCE_PUBLIC_IP }} >> ~/.ssh/known_hosts
-        else
-          echo "Error: GCE_PUBLIC_IP secret is not set."
-          exit 1
-        fi
+        echo "${{ secrets.SSH_PRIVATE_KEY_GCP }}" > key.pem
+        chmod 600 key.pem
 
-    - name: Create .env file
+    - name: Create and Upload .env file
       run: |
-        echo "${{ secrets.ENV_FILE }}" > .env
+        cat <<'EOF' > .env
+        ${{ secrets.ENV_FILE }}
+        EOF
+        
+        scp -i key.pem -o StrictHostKeyChecking=no .env ${{ secrets.GCP_USER }}@${{ secrets.GCE_PUBLIC_IP }}:~/litloop_backend_v2/.env
 
-    - name: Deploy to Server
+    - name: Sync files and run deploy script
       run: |
-        if [ -z "${{ secrets.GCP_USER }}" ] || [ -z "${{ secrets.GCE_PUBLIC_IP }}" ]; then
-          echo "Error: GCP_USER or GCE_PUBLIC_IP secret is missing."
-          exit 1
-        fi
-        ssh ${{ secrets.GCP_USER }}@${{ secrets.GCE_PUBLIC_IP }} "mkdir -p ~/litloop_backend_v2"
-        rsync -avz --exclude '.git' --exclude 'env' --exclude 'venv' --exclude 'venv_3.9' --exclude '__pycache__' --exclude 'uploaded_media' --exclude 'static' ./ ${{ secrets.GCP_USER }}@${{ secrets.GCE_PUBLIC_IP }}:~/litloop_backend_v2/
-        ssh ${{ secrets.GCP_USER }}@${{ secrets.GCE_PUBLIC_IP }} "cd ~/litloop_backend_v2 && bash deploy/deploy_script.sh"
+        # Ensure directory exists
+        ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.GCP_USER }}@${{ secrets.GCE_PUBLIC_IP }} "mkdir -p ~/litloop_backend_v2"
+        
+        # Sync code
+        rsync -avz -e "ssh -i key.pem -o StrictHostKeyChecking=no" \
+          --exclude '.git' \
+          --exclude 'env' \
+          --exclude 'venv' \
+          --exclude 'venv_3.9' \
+          --exclude '__pycache__' \
+          --exclude 'uploaded_media' \
+          --exclude 'static' \
+          ./ ${{ secrets.GCP_USER }}@${{ secrets.GCE_PUBLIC_IP }}:~/litloop_backend_v2/
+
+        # Execute remote script using EOF
+        ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.GCP_USER }}@${{ secrets.GCE_PUBLIC_IP }} << 'EOF'
+          cd ~/litloop_backend_v2
+          bash deploy/deploy_script.sh
+        EOF
+
+    - name: Clean up local secrets
+      run: rm -f .env key.pem

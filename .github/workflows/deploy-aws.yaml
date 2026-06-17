@@ -29,8 +29,6 @@ jobs:
       run: |
         cat > .env << EOF
         DJANGO_SETTINGS_MODULE=${{ secrets.DJANGO_SETTINGS_MODULE }}
-        SPOTIPY_CLIENT_ID=${{ secrets.SPOTIPY_CLIENT_ID }}
-        SPOTIPY_CLIENT_SECRET=${{ secrets.SPOTIPY_CLIENT_SECRET }}
 
         AWS_ACCESS_KEY_QALYBAY=${{ secrets.AWS_ACCESS_KEY_QALYBAY }}
         AWS_SECRET_KEY_QALYBAY=${{ secrets.AWS_SECRET_KEY_QALYBAY }}

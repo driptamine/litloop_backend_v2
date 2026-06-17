@@ -215,9 +215,6 @@ ASGI_APPLICATION = 'litloop_project.asgi.application'
     # }
 # }
 
-SPOTIPY_CLIENT_ID     = os.environ.get('SPOTIPY_CLIENT_ID')
-SPOTIPY_CLIENT_SECRET = os.environ.get('SPOTIPY_CLIENT_SECRET')
-
 AWS_REGION_DRIPTAMINE           = 'eu-north-1'
 AWS_ACCESS_KEY_DRIPTAMINE       = os.environ.get('AWS_ACCESS_KEY_DRIPTAMINE')
 AWS_SECRET_KEY_DRIPTAMINE       = os.environ.get('AWS_SECRET_KEY_DRIPTAMINE')

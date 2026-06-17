@@ -5,7 +5,6 @@ djangorestframework-simplejwt
 django-shortcuts
 django-extensions
 drf-yasg
-spotipy
 django-cors-headers
 py-deezer
 deezer-py

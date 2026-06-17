@@ -16,11 +16,6 @@ from posts.views import (
     post_detail,
     update_post_no_drf,
     delete_post_no_drf,
-
-    SearchArtistView,
-    SearchAlbumView,
-    SearchTrackView
-
 )
 
 urlpatterns = [
@@ -50,11 +45,6 @@ urlpatterns = [
 
 
     # ──────── FEED ────────
-
-    # ──────── SEARCH ────────
-    path('search/artist', SearchArtistView.as_view(), name="search"),
-    path('search/album', SearchAlbumView.as_view(), name="search"),
-    path('search/track', SearchTrackView.as_view(), name="search"),
 
     # ──────── MISC ────────
 ]

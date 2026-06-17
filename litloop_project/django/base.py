@@ -89,7 +89,6 @@ THIRD_PARTY_APPS = [
     'django_extensions',
     'drf_yasg',
     'mptt',
-    'spotipy',
 ]
 
 INSTALLED_APPS = [
