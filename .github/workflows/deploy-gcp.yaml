@@ -25,13 +25,13 @@ jobs:
         ${{ secrets.ENV_FILE }}
         EOF
         
+        # Ensure directory exists before scp
+        ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.GCP_USER }}@${{ secrets.GCE_PUBLIC_IP }} "mkdir -p ~/litloop_backend_v2"
+        
         scp -i key.pem -o StrictHostKeyChecking=no .env ${{ secrets.GCP_USER }}@${{ secrets.GCE_PUBLIC_IP }}:~/litloop_backend_v2/.env
 
     - name: Sync files and run deploy script
       run: |
-        # Ensure directory exists
-        ssh -i key.pem -o StrictHostKeyChecking=no ${{ secrets.GCP_USER }}@${{ secrets.GCE_PUBLIC_IP }} "mkdir -p ~/litloop_backend_v2"
-        
         # Sync code
         rsync -avz -e "ssh -i key.pem -o StrictHostKeyChecking=no" \
           --exclude '.git' \
