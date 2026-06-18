@@ -14,12 +14,14 @@ class JWTAuthMiddleware:
 
     async def __call__(self, scope, receive, send):
         # Extract token from query string
-        query_string = scope.get("query_string", b"").decode()
+        raw_qs = scope.get("query_string", b"")
+        print(f"DEBUG: raw query_string={raw_qs!r}")
+        query_string = raw_qs.decode()
         query_params = parse_qs(query_string)
         token = query_params.get("token", [None])[0]
 
         if token:
-            print(f"DEBUG: Found token in query string: {token[:10]}...")
+            print(f"DEBUG: Found token in query string: {token[:20]}...")
             user = await self.get_user(token)
             print(f"DEBUG: Authenticated user: {user}")
             scope["user"] = user
