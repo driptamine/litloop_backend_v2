@@ -408,7 +408,7 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
 
-REDIS_LOCATION = "redis://127.0.0.1:6379/1"
+REDIS_LOCATION = "redis://127.0.0.1:6379/1?protocol=2"
 # REDIS_LOCATION = "redis://mycache.abc123.use1.cache.amazonaws.com:6379/1"
 # CELERY_RESULT_BACKEND = 'redis://localhost:6379'
 
