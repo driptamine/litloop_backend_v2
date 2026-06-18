@@ -1,40 +1,67 @@
-import json
-import sys
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
+
 
 class NotificationConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
-        user = self.scope.get("user", AnonymousUser())
-        sys.stderr.write(f"DEBUG NotificationConsumer: user={user} is_authenticated={user.is_authenticated}\n")
-        sys.stderr.flush()
-        if user.is_authenticated:
-            self.user_id = self.scope["user"].id
-            self.room_group_name = f'user_{self.user_id}_notifications'
+        self.user_id = None
+        self.room_group_name = None
+        self.authenticated = False
 
-            # Join room group
+        user = self.scope.get("user", AnonymousUser())
+        if user.is_authenticated:
+            self.authenticated = True
+            self.user_id = user.id
+            self.room_group_name = f'user_{self.user_id}_notifications'
             await self.channel_layer.group_add(
                 self.room_group_name,
                 self.channel_name
             )
 
-            await self.accept()
-        else:
-            # Accept first to avoid Daphne crash on close without accept
-            await self.accept()
-            await self.close(code=4001)
+        await self.accept()
 
     async def disconnect(self, close_code):
-        if hasattr(self, 'room_group_name'):
-            # Leave room group
+        if self.room_group_name:
             await self.channel_layer.group_discard(
                 self.room_group_name,
                 self.channel_name
             )
 
-    # Receive notification from group
+    async def receive_json(self, content):
+        if content.get('type') == 'auth':
+            await self._handle_auth(content)
+
+    async def _handle_auth(self, content):
+        token = content.get('token')
+        if not token or self.authenticated:
+            return
+
+        user = await self._get_user_from_token(token)
+        if user and user.is_authenticated:
+            self.authenticated = True
+            self.user_id = user.id
+            self.room_group_name = f'user_{self.user_id}_notifications'
+            await self.channel_layer.group_add(
+                self.room_group_name,
+                self.channel_name
+            )
+            await self.send_json({'type': 'auth_ok'})
+
+    @database_sync_to_async
+    def _get_user_from_token(self, token):
+        from users.jwt_auth import decode_jwt
+        from users.models import User
+        try:
+            payload = decode_jwt(token)
+            if payload:
+                user_id = payload.get('user_id')
+                if user_id:
+                    return User.objects.get(id=user_id)
+        except Exception:
+            pass
+        return AnonymousUser()
+
     async def send_notification(self, event):
         notification = event['notification']
-
-        # Send notification to WebSocket
         await self.send_json(notification)
