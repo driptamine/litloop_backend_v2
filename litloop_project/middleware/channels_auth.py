@@ -13,11 +13,12 @@ class JWTAuthMiddleware:
         self.inner = inner
 
     async def __call__(self, scope, receive, send):
-        # Debug: log full scope path info
-        print(f"DEBUG WS scope: path={scope.get('path')!r} raw_path={scope.get('raw_path')!r} query_string={scope.get('query_string')!r} type={scope.get('type')!r}")
-
-        # Extract token from query string
+        import sys
         raw_qs = scope.get("query_string", b"")
+        scope_path = scope.get("path", "")
+        sys.stderr.write(f"DEBUG JWTAuth: path={scope_path!r} qs={raw_qs!r}\n")
+        sys.stderr.flush()
+
         query_string = raw_qs.decode()
         query_params = parse_qs(query_string)
         token = query_params.get("token", [None])[0]

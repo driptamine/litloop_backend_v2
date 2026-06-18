@@ -1,10 +1,13 @@
 import json
+import sys
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from django.contrib.auth.models import AnonymousUser
 
 class NotificationConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
         user = self.scope.get("user", AnonymousUser())
+        sys.stderr.write(f"DEBUG NotificationConsumer: user={user} is_authenticated={user.is_authenticated}\n")
+        sys.stderr.flush()
         if user.is_authenticated:
             self.user_id = self.scope["user"].id
             self.room_group_name = f'user_{self.user_id}_notifications'
@@ -17,7 +20,9 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
 
             await self.accept()
         else:
-            await self.close()
+            # Accept first to avoid Daphne crash on close without accept
+            await self.accept()
+            await self.close(code=4001)
 
     async def disconnect(self, close_code):
         if hasattr(self, 'room_group_name'):
