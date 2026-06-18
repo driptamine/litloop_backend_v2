@@ -419,6 +419,10 @@ CHANNEL_LAYERS = {
             "hosts": [{
                 "address": REDIS_LOCATION,
                 "max_connections": 50,
+                "health_check_interval": 30,
+                "socket_connect_timeout": 3,
+                "socket_timeout": 5,
+                "retry_on_timeout": True,
             }],
             "capacity": 150,
         },
@@ -434,6 +438,8 @@ CACHES = {
             "CONNECTION_POOL_KWARGS": {
                 "max_connections": 50,
                 "timeout": 5,
+                "health_check_interval": 30,
+                "retry_on_timeout": True,
             },
         },
     }
