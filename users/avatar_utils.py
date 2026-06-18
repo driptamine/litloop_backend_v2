@@ -39,7 +39,7 @@ def download_and_save_avatar(image_url: str, user_id: int) -> str:
             logger.info("Avatar saved locally: %s", local_url)
             return local_url
         else:
-            from uploader.gcs import gcs_get_client
+            from chats.gcs import gcs_get_client
             client = gcs_get_client()
             bucket_name = getattr(settings, "GCS_BUCKET_NAME", "litloop_bucket_free")
             bucket = client.bucket(bucket_name)

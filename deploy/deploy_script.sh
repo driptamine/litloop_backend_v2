@@ -64,6 +64,10 @@ sudo systemctl daemon-reload
 sudo systemctl enable daphne gunicorn_http
 sudo systemctl restart daphne gunicorn_http
 
+# Add handy aliases (idempotent)
+grep -q "alias guni=" ~/.bashrc 2>/dev/null || echo "alias guni='sudo systemctl restart gunicorn_http && sudo systemctl status gunicorn_http'" >> ~/.bashrc
+grep -q "alias daph=" ~/.bashrc 2>/dev/null || echo "alias daph='sudo systemctl restart daphne && sudo systemctl status daphne'" >> ~/.bashrc
+
 # Set up Nginx
 echo "🌐 Configuring Nginx..."
 # Update paths in nginx config if necessary

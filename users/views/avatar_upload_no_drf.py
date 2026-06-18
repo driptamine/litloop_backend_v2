@@ -2,7 +2,7 @@ import os
 import uuid
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from uploader.gcs import gcs_upload_file
+from chats.gcs import gcs_upload_file
 from users.auth_utils import jwt_required_testable
 
 @csrf_exempt

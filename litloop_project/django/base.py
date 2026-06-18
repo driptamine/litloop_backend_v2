@@ -60,13 +60,11 @@ LOCAL_APPS = [
     'albums',
     'images',
 
-    'uploader',
     # 'media',
     'encoding',
     'litloop_project',
     # 'videos.apps.VideosConfig',
     'actions.apps.ActionsConfig',
-    # 'uploader.apps.UploaderConfig',
 
     # 'authentication.apps.AuthenticationConfig',
     # 'users.apps.UsersConfig',

@@ -7,6 +7,8 @@ from users.models import User
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
+        print("AYOOO CHAT")
+        
         self.user = self.scope.get("user", AnonymousUser())
         self.chat_id = self.scope['url_route']['kwargs']['chat_id']
         self.room_group_name = f'chat_{self.chat_id}'
@@ -24,7 +26,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             print(f"DEBUG: Connection rejected - Chat {self.chat_id} not found or error adding participant")
             await self.close()
             return
-        
+
         print(f"DEBUG: Connection accepted for user {self.user.id} in chat {self.chat_id}")
 
         # Join room group
@@ -46,12 +48,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     # Receive message from WebSocket
     async def receive_json(self, content):
         msg_type = content.get('type', 'chat_message')
-        
+
         if msg_type == 'chat_message':
             text = content.get('text', '')
             attachments = content.get('attachments', [])
             voice_message_id = content.get('voice_message_id')
-            
+
             if not text and not attachments and not voice_message_id:
                 return
 
@@ -82,7 +84,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                         'notification': n['data']
                     }
                 )
-        
+
         elif msg_type.startswith('voip_'):
             # Handle VoIP signaling
             await self.channel_layer.group_send(
@@ -93,11 +95,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     'content': content
                 }
             )
-            
+
             # Optionally track call state in DB
             if msg_type == 'voip_call_start':
                 await self.db_track_call_start(content)
-                
+
                 # Send "Incoming Call" notification to participants global channels
                 participants_ids = await self.get_participants_ids(self.chat_id, self.user.id)
                 for p_id in participants_ids:
@@ -199,15 +201,15 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     def create_notifications(self, chat_id, sender_id, message_id):
         from notifications.models import Notification
         from django.contrib.contenttypes.models import ContentType
-        
+
         try:
             chat = Chat.objects.get(id=chat_id)
             message = Message.objects.get(id=message_id)
             sender = User.objects.get(id=sender_id)
-            
+
             participants = chat.participants.exclude(id=sender_id)
             content_type = ContentType.objects.get_for_model(message)
-            
+
             notifications_data = []
             for p in participants:
                 Notification.objects.create(
@@ -217,7 +219,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     target_object_id=message.id
                 )
                 unread_count = chat.messages.exclude(user=p).filter(is_read=False).count()
-                
+
                 voice = message.voice_messages.first()
                 if message.text:
                     preview = message.text[:50]
@@ -252,7 +254,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         try:
             chat = Chat.objects.get(id=chat_id)
             user = User.objects.get(id=user_id) if user_id else None
-            
+
             message = Message.objects.create(
                 chat=chat,
                 user=user,
@@ -272,7 +274,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     }
                 except VoiceMessage.DoesNotExist:
                     pass
-            
+
             return {
                 'id': message.id,
                 'text': message.text,

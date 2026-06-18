@@ -13,7 +13,7 @@ from users.models import User
 from django.db.models import F, Max, Value, DateTimeField
 from django.db.models.functions import Coalesce
 from .models import Chat, Message, VoiceMessage
-from uploader.gcs import gcs_upload_file
+from .gcs import gcs_upload_file
 from .utils import get_user_from_jwt, get_ice_servers
 
 @csrf_exempt
@@ -44,31 +44,36 @@ def get_authenticated_user(request):
         return request.user
     return None
 
+# ─── Direct Chat Views ─────────────────────────────────────────────
+
+@require_GET
+def direct_chat_list(request):
+    """Lists direct chats for the current user."""
+    return _chat_list_by_type(request, 'direct')
+
 @csrf_exempt
-def get_or_create_direct_chat(request, user_id):
-    """
-    Finds or creates a direct chat between the current user and the target user_id.
-    Approach: chats/<user_id>/
-    """
+def direct_chat_detail(request, user_id):
+    """Finds or creates a direct chat between the current user and target user_id."""
     current_user = get_authenticated_user(request)
-    
+
     if not current_user:
-        # Fallback for testing/dev if no user is found
         try:
             current_user = User.objects.get(username='alice')
         except User.DoesNotExist:
-            return JsonResponse({"error": "Unauthorized and fallback user 'alice' not found"}, status=401)
+            return JsonResponse({"error": "Unauthorized"}, status=401)
 
     target_user = get_object_or_404(User, id=user_id)
-    
+
     if current_user == target_user:
         return JsonResponse({"error": "You cannot chat with yourself"}, status=400)
 
-    # Find a chat that has exactly these two participants
     chat = Chat.objects.filter(participants=current_user).filter(participants=target_user).first()
 
     if not chat:
-        chat = Chat.objects.create(name=f"dm-{min(current_user.id, target_user.id)}-{max(current_user.id, target_user.id)}")
+        chat = Chat.objects.create(
+            chat_type='direct',
+            name=f"dm-{min(current_user.id, target_user.id)}-{max(current_user.id, target_user.id)}"
+        )
         chat.participants.add(current_user, target_user)
 
     messages_queryset = chat.messages.all().select_related('user').prefetch_related('voice_messages').order_by('created_at')
@@ -93,6 +98,7 @@ def get_or_create_direct_chat(request, user_id):
 
     return JsonResponse({
         "id": chat.id,
+        "chat_type": chat.chat_type,
         "name": chat.name,
         "username": target_user.username,
         "avatar": target_user.avatar,
@@ -100,78 +106,36 @@ def get_or_create_direct_chat(request, user_id):
         "messages": messages
     })
 
-@csrf_exempt
-@require_POST
-def create_chat(request):
-    """Creates a new chat room and adds the creator as a participant."""
-    try:
-        user = get_authenticated_user(request)
-        if not user:
-            return JsonResponse({"error": "Unauthorized"}, status=401)
-
-        if not request.body:
-            return JsonResponse({"error": "Request body is empty"}, status=400)
-        data = json.loads(request.body)
-        name = data.get("name", "").strip()
-        description = data.get("description", "").strip()
-        
-        if not name:
-            return JsonResponse({"error": "Chat name is required"}, status=400)
-            
-        chat = Chat.objects.create(
-            name=name[:20],  # SlugField max_length is 20
-            description=description
-        )
-        chat.participants.add(user)
-        
-        return JsonResponse({
-            "status": "created",
-            "chat": {
-                "id": chat.id,
-                "name": chat.name,
-                "description": chat.description
-            }
-        })
-    except json.JSONDecodeError:
-        return JsonResponse({"error": "Invalid JSON"}, status=400)
-    except Exception as e:
-        return JsonResponse({"error": str(e)}, status=500)
+# ─── Group Chat Views ─────────────────────────────────────────────
 
 @require_GET
-def chat_list(request):
-    """Lists all available chat rooms."""
-    chats = list(Chat.objects.all().values('id', 'name', 'image_url', 'description'))
-    return JsonResponse({"chats": chats})
+def group_chat_list(request):
+    """Lists group chats for the current user."""
+    return _chat_list_by_type(request, 'groupchat')
 
-@require_GET
-def my_chats(request):
-    """Lists chats for the current authenticated user, ordered by most recent message."""
+def _chat_list_by_type(request, chat_type):
+    """Shared helper for listing chats filtered by type."""
     user = get_authenticated_user(request)
     if not user:
         return JsonResponse({"error": "Unauthorized"}, status=401)
-    
-    # Annotate with the timestamp of the last message and order by it
-    # Use Coalesce to handle chats with no messages (they'll have a very old date)
-    # We use output_field=DateTimeField() to ensure compatibility across DB backends
+
     epoch = datetime.datetime(2000, 1, 1, tzinfo=datetime.timezone.utc)
-    chats = user.chats.annotate(
+    chats = user.chats.filter(chat_type=chat_type).annotate(
         last_message_at=Coalesce(
             Max('messages__created_at'),
             Value(epoch),
             output_field=DateTimeField()
         )
     ).order_by('-last_message_at')
-    
+
     chats_data = []
     for chat in chats:
-        # For direct chats, find the other participant
         other_participant = chat.participants.exclude(id=user.id).first()
-        
-        # Calculate unread count for this user
         unread_count = chat.messages.exclude(user=user).filter(is_read=False).count()
-        
+
         chat_info = {
             "id": chat.id,
+            "chat_type": chat.chat_type,
             "name": chat.name,
             "image_url": chat.image_url,
             "description": chat.description,
@@ -182,8 +146,7 @@ def my_chats(request):
                 "avatar": other_participant.avatar
             } if other_participant else None
         }
-        
-        # Get the last message
+
         last_message = chat.messages.order_by('-created_at').first()
         if last_message:
             voice = last_message.voice_messages.first()
@@ -201,33 +164,75 @@ def my_chats(request):
                 "attachments": last_message.attachments,
                 "voice_message": voice_data
             }
-        
+
         chats_data.append(chat_info)
-        
+
     return JsonResponse({"chats": chats_data})
 
+@csrf_exempt
+@require_POST
+def create_group_chat(request):
+    """Creates a new group chat and adds the creator as a participant."""
+    try:
+        user = get_authenticated_user(request)
+        if not user:
+            return JsonResponse({"error": "Unauthorized"}, status=401)
+
+        if not request.body:
+            return JsonResponse({"error": "Request body is empty"}, status=400)
+        data = json.loads(request.body)
+        name = data.get("name", "").strip()
+        description = data.get("description", "").strip()
+        image_url = data.get("image_url", "").strip()
+        participant_ids = data.get("participant_ids", [])
+
+        if not name:
+            return JsonResponse({"error": "Chat name is required"}, status=400)
+
+        chat = Chat.objects.create(
+            chat_type='groupchat',
+            name=name[:20],
+            description=description,
+            image_url=image_url or None,
+        )
+        chat.participants.add(user)
+
+        if participant_ids:
+            participants = User.objects.filter(id__in=participant_ids)
+            chat.participants.add(*participants)
+
+        return JsonResponse({
+            "status": "created",
+            "chat": {
+                "id": chat.id,
+                "name": chat.name,
+                "chat_type": chat.chat_type,
+                "description": chat.description,
+                "image_url": chat.image_url,
+                "participant_count": chat.participants.count(),
+            }
+        })
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
 @require_GET
-def chat_detail(request, chat_id):
-    """Returns messages and target_user for a specific chat room."""
+def group_chat_detail(request, chat_id):
+    """Returns group chat info with participants and messages."""
     chat = get_object_or_404(Chat, id=chat_id)
     user = get_authenticated_user(request)
-    
-    # Mark messages as read if the user is a participant
+
     if user and user.is_authenticated:
         chat.messages.exclude(user=user).filter(is_read=False).update(is_read=True)
-    
-    # Identify the other participant
-    if user and user.is_authenticated:
-        other_participant = chat.participants.exclude(id=user.id).first()
-    else:
-        other_participant = chat.participants.first()
-        
-    target_user = {
-        "id": other_participant.id,
-        "username": other_participant.username,
-        "avatar": other_participant.avatar
-    } if other_participant else None
-    
+
+    participants = chat.participants.all()
+    participants_list = [{
+        "id": p.id,
+        "username": p.username,
+        "avatar": p.avatar,
+    } for p in participants]
+
     messages_queryset = chat.messages.all().select_related('user').prefetch_related('voice_messages').order_by('created_at')
     messages = []
     for msg in messages_queryset:
@@ -251,10 +256,204 @@ def chat_detail(request, chat_id):
 
     return JsonResponse({
         "id": chat.id,
+        "chat_type": chat.chat_type,
+        "name": chat.name,
+        "description": chat.description,
+        "image_url": chat.image_url,
+        "participants": participants_list,
+        "messages": messages,
+    })
+
+@csrf_exempt
+@require_POST
+def group_add_member(request, chat_id):
+    """Adds a user to a group chat."""
+    user = get_authenticated_user(request)
+    if not user:
+        return JsonResponse({"error": "Unauthorized"}, status=401)
+
+    chat = get_object_or_404(Chat, id=chat_id)
+    if chat.chat_type != 'groupchat':
+        return JsonResponse({"error": "Not a group chat"}, status=400)
+
+    if not chat.participants.filter(id=user.id).exists():
+        return JsonResponse({"error": "Forbidden"}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        target_user_id = data.get("user_id")
+        if not target_user_id:
+            return JsonResponse({"error": "user_id is required"}, status=400)
+
+        target_user = get_object_or_404(User, id=target_user_id)
+        chat.participants.add(target_user)
+
+        return JsonResponse({
+            "status": "added",
+            "user_id": target_user.id,
+            "username": target_user.username,
+            "participant_count": chat.participants.count(),
+        })
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+@csrf_exempt
+@require_POST
+def group_remove_member(request, chat_id):
+    """Removes a user from a group chat."""
+    user = get_authenticated_user(request)
+    if not user:
+        return JsonResponse({"error": "Unauthorized"}, status=401)
+
+    chat = get_object_or_404(Chat, id=chat_id)
+    if chat.chat_type != 'groupchat':
+        return JsonResponse({"error": "Not a group chat"}, status=400)
+
+    if not chat.participants.filter(id=user.id).exists():
+        return JsonResponse({"error": "Forbidden"}, status=403)
+
+    try:
+        data = json.loads(request.body)
+        target_user_id = data.get("user_id")
+        if not target_user_id:
+            return JsonResponse({"error": "user_id is required"}, status=400)
+
+        target_user = get_object_or_404(User, id=target_user_id)
+        chat.participants.remove(target_user)
+
+        return JsonResponse({
+            "status": "removed",
+            "user_id": target_user.id,
+            "participant_count": chat.participants.count(),
+        })
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+@require_GET
+def chat_list(request):
+    """Lists all available chat rooms."""
+    chats = list(Chat.objects.all().values('id', 'name', 'image_url', 'description'))
+    return JsonResponse({"chats": chats})
+
+@require_GET
+def my_chats(request):
+    """Lists chats for the current authenticated user, ordered by most recent message."""
+    user = get_authenticated_user(request)
+    if not user:
+        return JsonResponse({"error": "Unauthorized"}, status=401)
+
+    # Annotate with the timestamp of the last message and order by it
+    # Use Coalesce to handle chats with no messages (they'll have a very old date)
+    # We use output_field=DateTimeField() to ensure compatibility across DB backends
+    epoch = datetime.datetime(2000, 1, 1, tzinfo=datetime.timezone.utc)
+    chats = user.chats.annotate(
+        last_message_at=Coalesce(
+            Max('messages__created_at'),
+            Value(epoch),
+            output_field=DateTimeField()
+        )
+    ).order_by('-last_message_at')
+
+    chats_data = []
+    for chat in chats:
+        # For direct chats, find the other participant
+        other_participant = chat.participants.exclude(id=user.id).first()
+
+        # Calculate unread count for this user
+        unread_count = chat.messages.exclude(user=user).filter(is_read=False).count()
+
+        chat_info = {
+            "id": chat.id,
+            "chat_type": chat.chat_type,
+            "name": chat.name,
+            "image_url": chat.image_url,
+            "description": chat.description,
+            "unread_count": unread_count,
+            "other_participant": {
+                "id": other_participant.id,
+                "username": other_participant.username,
+                "avatar": other_participant.avatar
+            } if other_participant else None
+        }
+
+        # Get the last message
+        last_message = chat.messages.order_by('-created_at').first()
+        if last_message:
+            voice = last_message.voice_messages.first()
+            voice_data = {
+                'id': voice.id,
+                'url': voice.url,
+                'duration': voice.duration
+            } if voice else None
+
+            chat_info["last_message"] = {
+                "text": last_message.text,
+                "created_at": last_message.created_at,
+                "user": last_message.user.username if last_message.user else "AI",
+                "is_read": last_message.is_read,
+                "attachments": last_message.attachments,
+                "voice_message": voice_data
+            }
+
+        chats_data.append(chat_info)
+
+    return JsonResponse({"chats": chats_data})
+
+@require_GET
+def chat_detail(request, chat_id):
+    """Returns messages and target_user for a specific chat room."""
+    chat = get_object_or_404(Chat, id=chat_id)
+    user = get_authenticated_user(request)
+
+    # Mark messages as read if the user is a participant
+    if user and user.is_authenticated:
+        chat.messages.exclude(user=user).filter(is_read=False).update(is_read=True)
+
+    # Identify the other participant
+    if user and user.is_authenticated:
+        other_participant = chat.participants.exclude(id=user.id).first()
+    else:
+        other_participant = chat.participants.first()
+
+    target_user = {
+        "id": other_participant.id,
+        "username": other_participant.username,
+        "avatar": other_participant.avatar
+    } if other_participant else None
+
+    messages_queryset = chat.messages.all().select_related('user').prefetch_related('voice_messages').order_by('created_at')
+    messages = []
+    for msg in messages_queryset:
+        voice = msg.voice_messages.first()
+        voice_data = {
+            'id': voice.id,
+            'url': voice.url,
+            'duration': voice.duration
+        } if voice else None
+
+        messages.append({
+            'id': msg.id,
+            'username': msg.user.username if msg.user else 'AI',
+            'avatar': msg.user.avatar if msg.user else None,
+            'text': msg.text,
+            'created_at': msg.created_at.isoformat(),
+            'is_read': msg.is_read,
+            'attachments': msg.attachments,
+            'voice_message': voice_data
+        })
+
+    return JsonResponse({
+        "id": chat.id,
+        "chat_type": chat.chat_type,
         "name": chat.name,
         "target_user": target_user,
         "messages": messages
     })
+
 @csrf_exempt
 @require_POST
 def mark_as_read(request, chat_id):
@@ -262,16 +461,16 @@ def mark_as_read(request, chat_id):
     user = get_authenticated_user(request)
     if not user:
         return JsonResponse({"error": "Unauthorized"}, status=401)
-        
+
     chat = get_object_or_404(Chat, id=chat_id)
-    
+
     # Check if user is a participant
     if not chat.participants.filter(id=user.id).exists():
         return JsonResponse({"error": "Forbidden"}, status=403)
-        
+
     # Mark messages as read (exclude messages sent by the user themselves)
     chat.messages.exclude(user=user).filter(is_read=False).update(is_read=True)
-    
+
     return JsonResponse({"status": "success", "chat_id": chat_id})
 
 @csrf_exempt
@@ -333,7 +532,7 @@ def voice_message_upload_api(request):
     try:
         ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'webm'
         gcs_path = f"voice_messages/{uuid.uuid4()}.{ext}"
-        
+
         # Upload to GCS
         gcs_upload_file(uploaded_file, gcs_path, content_type=uploaded_file.content_type)
 
@@ -364,7 +563,7 @@ def send_message(request, chat_id):
 
         if not request.body:
             return JsonResponse({"error": "Request body is empty"}, status=400)
-        
+
         try:
             data = json.loads(request.body)
         except json.JSONDecodeError:
@@ -378,11 +577,11 @@ def send_message(request, chat_id):
             return JsonResponse({"error": "Message text, attachment, or voice message is required"}, status=400)
 
         chat = get_object_or_404(Chat, id=chat_id)
-        
+
         # Ensure user is a participant
         if not chat.participants.filter(id=user.id).exists():
             chat.participants.add(user)
-        
+
         message = Message.objects.create(
             chat=chat,
             user=user,
@@ -412,7 +611,7 @@ def send_message(request, chat_id):
             'attachments': message.attachments,
             'voice_message': voice_data
         }
-        
+
         # 1. Send to Chat Group
         async_to_sync(channel_layer.group_send)(
             f'chat_{chat.id}',
@@ -425,7 +624,7 @@ def send_message(request, chat_id):
         # 2. Send Notifications to other participants
         participants = chat.participants.exclude(id=user.id)
         content_type = ContentType.objects.get_for_model(message)
-        
+
         for p in participants:
             Notification.objects.create(
                 from_user=user,
@@ -473,17 +672,17 @@ def delete_chat(request, chat_id):
     """Deletes a chat if the user is a participant."""
     if request.method not in ['DELETE', 'POST']:
         return JsonResponse({"error": "Method not allowed"}, status=405)
-        
+
     user = get_authenticated_user(request)
     if not user:
         return JsonResponse({"error": "Unauthorized"}, status=401)
-        
+
     chat = get_object_or_404(Chat, id=chat_id)
-    
+
     # Check if user is a participant
     if not chat.participants.filter(id=user.id).exists():
         return JsonResponse({"error": "Forbidden"}, status=403)
-        
+
     chat.delete()
     return JsonResponse({"status": "deleted", "id": chat_id})
 
@@ -502,7 +701,7 @@ def chat_with_gemini(request):
     try:
         # 1. Get or Create a special Gemini Chat room
         gemini_chat, _ = Chat.objects.get_or_create(
-            name="gemini-ai", 
+            name="gemini-ai",
             defaults={"description": "AI Assistant Conversation"}
         )
 
@@ -516,7 +715,7 @@ def chat_with_gemini(request):
 
         # 3. Get AI Response
         response = client.models.generate_content(
-            contents=user_query, 
+            contents=user_query,
             model='gemini-2.0-flash-001'
         )
         ai_text = response.text

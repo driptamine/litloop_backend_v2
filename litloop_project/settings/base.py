@@ -105,7 +105,6 @@ LOCAL_APPS = [
     'suggestions',
     'todos',
     'tracks',
-    'uploader',
     'users',
     'videos',
     'views',

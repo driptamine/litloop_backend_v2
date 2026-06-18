@@ -11,10 +11,10 @@ class Chat(models.Model):
         ('groupchat', 'Group Chat'),
     ]
 
-    chat_type   = models.CharField(max_length=20, choices=CHAT_TYPES, default='direct')
-    name        = models.SlugField(max_length=20, blank=True, null=True)
-    image_url   = models.CharField(max_length=400, blank=True, null=True)
-    description = models.CharField(max_length=400, blank=True, null=True)
+    chat_type    = models.CharField(max_length=20, choices=CHAT_TYPES, default='direct')
+    name         = models.SlugField(max_length=20, blank=True, null=True)
+    image_url    = models.CharField(max_length=400, blank=True, null=True)
+    description  = models.CharField(max_length=400, blank=True, null=True)
     participants = models.ManyToManyField(User, related_name="chats", blank=True)
 
 
@@ -90,13 +90,13 @@ class Call(models.Model):
     chat = models.ForeignKey(Chat, on_delete=models.CASCADE, related_name="calls")
     caller = models.ForeignKey(User, on_delete=models.CASCADE, related_name="calls_initiated")
     receiver = models.ForeignKey(User, on_delete=models.CASCADE, related_name="calls_received", null=True, blank=True)
-    
+
     call_type = models.CharField(max_length=10, choices=CALL_TYPES, default='voice')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='initiated')
-    
+
     started_at = models.DateTimeField(auto_now_add=True)
     ended_at = models.DateTimeField(null=True, blank=True)
-    
+
     @property
     def duration(self):
         if self.started_at and self.ended_at:

@@ -36,7 +36,7 @@ if not settings.configured:
             'queries',
             'suggestions',
             'todos',
-            'uploader',
+
             'views',
             'websites',
         ],

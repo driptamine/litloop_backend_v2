@@ -3,7 +3,6 @@ from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
 
-from uploader.channels import TaskProgressConsumer
 from chats.consumers import ChatConsumer
 from notifications.consumers import NotificationConsumer
 
@@ -38,7 +37,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('auth/', include('auth_cookie.urls')),
 
-    path('ws/', include("uploader.urls", namespace='websocket')),
+
 
     path('users/', include('users.urls')),
     path('videos/', include('videos.urls')),
@@ -71,10 +70,6 @@ urlpatterns = [
 
 # ref docker-celery
 websocket_urlpatterns = [
-    # path("task/upload/<str:taskID>/", TaskProgressConsumer.as_asgi()),
-    # path("task/transcoding/<str:taskID>/", TaskProgressConsumer.as_asgi()),
-
-    path("task/progress/<str:taskID>/", TaskProgressConsumer.as_asgi()),
     path("ws/chat/<int:chat_id>/", ChatConsumer.as_asgi()),
     path("ws/notifications/", NotificationConsumer.as_asgi()),
 ]
