@@ -13,21 +13,19 @@ class JWTAuthMiddleware:
         self.inner = inner
 
     async def __call__(self, scope, receive, send):
+        # Debug: log full scope path info
+        print(f"DEBUG WS scope: path={scope.get('path')!r} raw_path={scope.get('raw_path')!r} query_string={scope.get('query_string')!r} type={scope.get('type')!r}")
+
         # Extract token from query string
         raw_qs = scope.get("query_string", b"")
-        print(f"DEBUG: raw query_string={raw_qs!r}")
         query_string = raw_qs.decode()
         query_params = parse_qs(query_string)
         token = query_params.get("token", [None])[0]
 
         if token:
-            print(f"DEBUG: Found token in query string: {token[:20]}...")
             user = await self.get_user(token)
-            print(f"DEBUG: Authenticated user: {user}")
             scope["user"] = user
         else:
-            print("DEBUG: No token found in query string")
-            # If no token, check if user is already in scope (e.g. from session)
             if "user" not in scope:
                 scope["user"] = AnonymousUser()
 
