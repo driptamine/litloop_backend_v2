@@ -6,6 +6,12 @@ from tracks.models import Track
 
 
 class Chat(models.Model):
+    CHAT_TYPES = [
+        ('direct', 'Direct'),
+        ('groupchat', 'Group Chat'),
+    ]
+
+    chat_type   = models.CharField(max_length=20, choices=CHAT_TYPES, default='direct')
     name        = models.SlugField(max_length=20, blank=True, null=True)
     image_url   = models.CharField(max_length=400, blank=True, null=True)
     description = models.CharField(max_length=400, blank=True, null=True)
