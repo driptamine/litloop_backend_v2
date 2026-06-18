@@ -7,6 +7,7 @@ User=driptamine
 Group=www-data
 WorkingDirectory=/home/driptamine/litloop_backend_v2
 Environment=DJANGO_SETTINGS_MODULE=litloop_project.settings.prod
+LimitNOFILE=65536
 
 # Dedicated Daphne for WebSockets on port 8000
 ExecStart=/home/driptamine/litloop_backend_v2/env/bin/daphne \

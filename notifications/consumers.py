@@ -1,6 +1,9 @@
+import logging
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationConsumer(AsyncJsonWebsocketConsumer):
@@ -14,19 +17,25 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
             self.authenticated = True
             self.user_id = user.id
             self.room_group_name = f'user_{self.user_id}_notifications'
-            await self.channel_layer.group_add(
-                self.room_group_name,
-                self.channel_name
-            )
+            try:
+                await self.channel_layer.group_add(
+                    self.room_group_name,
+                    self.channel_name
+                )
+            except Exception as e:
+                logger.error(f"group_add failed for user {self.user_id}: {e}")
 
         await self.accept()
 
     async def disconnect(self, close_code):
         if self.room_group_name:
-            await self.channel_layer.group_discard(
-                self.room_group_name,
-                self.channel_name
-            )
+            try:
+                await self.channel_layer.group_discard(
+                    self.room_group_name,
+                    self.channel_name
+                )
+            except Exception as e:
+                logger.error(f"group_discard failed: {e}")
 
     async def receive_json(self, content):
         if content.get('type') == 'auth':
@@ -39,13 +48,19 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
 
         user = await self._get_user_from_token(token)
         if user and user.is_authenticated:
+            old_group = self.room_group_name
             self.authenticated = True
             self.user_id = user.id
             self.room_group_name = f'user_{self.user_id}_notifications'
-            await self.channel_layer.group_add(
-                self.room_group_name,
-                self.channel_name
-            )
+            try:
+                if old_group:
+                    await self.channel_layer.group_discard(old_group, self.channel_name)
+                await self.channel_layer.group_add(
+                    self.room_group_name,
+                    self.channel_name
+                )
+            except Exception as e:
+                logger.error(f"group op failed during auth for user {self.user_id}: {e}")
             await self.send_json({'type': 'auth_ok'})
 
     @database_sync_to_async
