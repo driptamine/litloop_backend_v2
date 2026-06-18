@@ -420,8 +420,6 @@ CHANNEL_LAYERS = {
                 "address": REDIS_LOCATION,
                 "max_connections": 50,
             }],
-            "socket_connect_timeout": 5,
-            "socket_keepalive": True,
             "capacity": 150,
         },
     },
