@@ -11,6 +11,7 @@ Environment=DJANGO_SETTINGS_MODULE=litloop_project.settings.prod
 # Dedicated Daphne for WebSockets on port 8000
 ExecStart=/home/driptamine/litloop_backend_v2/env/bin/daphne \
     -v 2 \
+    --proxy-headers \
     -b 127.0.0.1 \
     -p 8000 \
     litloop_project.asgi:application
