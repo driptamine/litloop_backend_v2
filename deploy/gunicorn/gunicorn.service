@@ -1,5 +1,5 @@
 [Unit]
-Description=Daphne ASGI daemon for LitLoop (WebSockets only)
+Description=Daphne ASGI daemon for LitLoop (HTTP + WebSockets)
 After=network.target
 
 [Service]
