@@ -1,9 +1,12 @@
 import json
+import logging
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
 from .models import Chat, Message, VoiceMessage
 from users.models import User
+
+logger = logging.getLogger(__name__)
 
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def connect(self):
@@ -29,21 +32,30 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         print(f"DEBUG: Connection accepted for user {self.user.id} in chat {self.chat_id}")
 
-        # Join room group
-        await self.channel_layer.group_add(
-            self.room_group_name,
-            self.channel_name
-        )
-
         await self.accept()
 
-    async def disconnect(self, close_code):
-        if hasattr(self, 'room_group_name'):
-            # Leave room group
-            await self.channel_layer.group_discard(
+        try:
+            await self.channel_layer.group_add(
                 self.room_group_name,
                 self.channel_name
             )
+        except Exception:
+            logger.exception(
+                "Failed to join chat group %s (is Redis running?)",
+                self.room_group_name,
+            )
+            await self.close(code=1011)
+            return
+
+    async def disconnect(self, close_code):
+        if hasattr(self, 'room_group_name'):
+            try:
+                await self.channel_layer.group_discard(
+                    self.room_group_name,
+                    self.channel_name
+                )
+            except Exception:
+                logger.exception("Failed to leave chat group %s", self.room_group_name)
 
     # Receive message from WebSocket
     async def receive_json(self, content):

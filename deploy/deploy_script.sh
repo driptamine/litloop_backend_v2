@@ -17,7 +17,7 @@ fi
 # Update and install necessary packages
 echo "🔧 Updating and installing packages..."
 sudo apt update
-sudo apt install -y python3 python3-venv python3-pip nginx git libpq-dev
+sudo apt install -y python3 python3-venv python3-pip nginx git libpq-dev redis-server
 
 # Navigate to the project directory
 cd /home/$USER/litloop_backend_v2
@@ -61,7 +61,8 @@ sed -i "s|User=driptamine|User=$USER|g" deploy/gunicorn/gunicorn_http.service
 sudo cp deploy/gunicorn/gunicorn_http.service /etc/systemd/system/gunicorn_http.service
 
 sudo systemctl daemon-reload
-sudo systemctl enable daphne gunicorn_http
+sudo systemctl enable redis-server daphne gunicorn_http
+sudo systemctl restart redis-server
 sudo systemctl restart daphne gunicorn_http
 
 # Add handy aliases (idempotent)

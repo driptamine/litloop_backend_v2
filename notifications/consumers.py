@@ -1,6 +1,10 @@
+import logging
+
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth.models import AnonymousUser
+
+logger = logging.getLogger(__name__)
 
 
 class NotificationConsumer(AsyncJsonWebsocketConsumer):
@@ -9,28 +13,38 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
         self.room_group_name = None
         self.authenticated = False
 
+        await self.accept()
+
         user = self.scope.get("user", AnonymousUser())
         if user.is_authenticated:
-            self.authenticated = True
-            self.user_id = user.id
-            self.room_group_name = f'user_{self.user_id}_notifications'
-            await self.channel_layer.group_add(
-                self.room_group_name,
-                self.channel_name
-            )
-
-        await self.accept()
+            await self._join_user_group(user.id)
 
     async def disconnect(self, close_code):
         if self.room_group_name:
-            await self.channel_layer.group_discard(
-                self.room_group_name,
-                self.channel_name
-            )
+            try:
+                await self.channel_layer.group_discard(
+                    self.room_group_name,
+                    self.channel_name
+                )
+            except Exception:
+                logger.exception("Failed to leave notification group %s", self.room_group_name)
 
     async def receive_json(self, content):
         if content.get('type') == 'auth':
             await self._handle_auth(content)
+
+    async def _join_user_group(self, user_id):
+        self.authenticated = True
+        self.user_id = user_id
+        self.room_group_name = f'user_{self.user_id}_notifications'
+        try:
+            await self.channel_layer.group_add(
+                self.room_group_name,
+                self.channel_name
+            )
+        except Exception:
+            logger.exception("Failed to join notification group %s (is Redis running?)", self.room_group_name)
+            await self.send_json({'type': 'error', 'message': 'notification_service_unavailable'})
 
     async def _handle_auth(self, content):
         token = content.get('token')
@@ -39,13 +53,7 @@ class NotificationConsumer(AsyncJsonWebsocketConsumer):
 
         user = await self._get_user_from_token(token)
         if user and user.is_authenticated:
-            self.authenticated = True
-            self.user_id = user.id
-            self.room_group_name = f'user_{self.user_id}_notifications'
-            await self.channel_layer.group_add(
-                self.room_group_name,
-                self.channel_name
-            )
+            await self._join_user_group(user.id)
             await self.send_json({'type': 'auth_ok'})
 
     @database_sync_to_async
