@@ -408,13 +408,16 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 
 
-REDIS_LOCATION = "redis://127.0.0.1:6379/1?protocol=2"
+REDIS_LOCATION = "redis://127.0.0.1:6379/1"
 # REDIS_LOCATION = "redis://mycache.abc123.use1.cache.amazonaws.com:6379/1"
 # CELERY_RESULT_BACKEND = 'redis://localhost:6379'
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_LOCATION],
+        },
     },
 }
 
@@ -424,12 +427,6 @@ CACHES = {
         "LOCATION": REDIS_LOCATION,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
-            "CONNECTION_POOL_KWARGS": {
-                "max_connections": 50,
-                "timeout": 5,
-                "health_check_interval": 30,
-                "retry_on_timeout": True,
-            },
         },
     }
 }
