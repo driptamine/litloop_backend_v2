@@ -5,4 +5,4 @@ from .models import Query
 class QuerySerializer(serializers.ModelSerializer):
     class Meta:
         model = Query
-        fields = ['query_text', 'suggestion']
+        fields = ['query_text', 'suggestion', 'is_crawled']

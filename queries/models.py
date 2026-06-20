@@ -4,6 +4,7 @@ from django.db import models
 class Query(models.Model):
     query_text = models.CharField(max_length=255, blank=True, null=True)
     suggestion = models.CharField(max_length=255, blank=True, null=True)
+    is_crawled = models.BooleanField(default=False)
 
 # class Query(models.Model):
 #     query_text = models.CharField(max_length=255, blank=True, null=True)

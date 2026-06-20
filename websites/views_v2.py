@@ -5,36 +5,6 @@ from django.views import View
 from websites.models import Website, WebsiteImage
 
 
-class BingWebsiteSearchView(View):
-    def get(self, request, *args, **kwargs):
-        query_text = request.GET.get('q')
-        api_key = os.getenv("BING_API_KEY", "bef3f98862ac4222806c3bfd0ffa9bb6")
-        url = f"https://api.bing.microsoft.com/v7.0/search?q={query_text}&cc=en-US&setLang=en&mkt=en-US&count=40"
-        headers = {
-            "Ocp-Apim-Subscription-Key": api_key
-        }
-
-        response = requests.get(url, headers=headers)
-        data = response.json()
-        results = data.get('webPages', {}).get('value', [])
-        return JsonResponse({'results': results})
-
-
-class BingImageSearchView(View):
-    def get(self, request, *args, **kwargs):
-        query_text = request.GET.get('q')
-        api_key = os.getenv("BING_API_KEY", "bef3f98862ac4222806c3bfd0ffa9bb6")
-        url = f"https://api.bing.microsoft.com/v7.0/images/search?q={query_text}&safeSearch=Off"
-        headers = {
-            "Ocp-Apim-Subscription-Key": api_key
-        }
-
-        response = requests.get(url, headers=headers)
-        data = response.json()
-        results = data.get('value', [])
-        return JsonResponse({'results': results})
-
-
 class BraveWebsiteSearchView(View):
     def get(self, request, *args, **kwargs):
         query_text = request.GET.get('q')
@@ -130,6 +100,36 @@ class BraveImageSearchView(View):
                 pass
 
         return JsonResponse(results, safe=False)
+
+
+class BingWebsiteSearchView(View):
+    def get(self, request, *args, **kwargs):
+        query_text = request.GET.get('q')
+        api_key = os.getenv("BING_API_KEY", "bef3f98862ac4222806c3bfd0ffa9bb6")
+        url = f"https://api.bing.microsoft.com/v7.0/search?q={query_text}&cc=en-US&setLang=en&mkt=en-US&count=40"
+        headers = {
+            "Ocp-Apim-Subscription-Key": api_key
+        }
+
+        response = requests.get(url, headers=headers)
+        data = response.json()
+        results = data.get('webPages', {}).get('value', [])
+        return JsonResponse({'results': results})
+
+
+class BingImageSearchView(View):
+    def get(self, request, *args, **kwargs):
+        query_text = request.GET.get('q')
+        api_key = os.getenv("BING_API_KEY", "bef3f98862ac4222806c3bfd0ffa9bb6")
+        url = f"https://api.bing.microsoft.com/v7.0/images/search?q={query_text}&safeSearch=Off"
+        headers = {
+            "Ocp-Apim-Subscription-Key": api_key
+        }
+
+        response = requests.get(url, headers=headers)
+        data = response.json()
+        results = data.get('value', [])
+        return JsonResponse({'results': results})
 
 
 class AllWebsitesView(View):
