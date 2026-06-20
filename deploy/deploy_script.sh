@@ -50,9 +50,9 @@ chmod +x $(pwd)/deploy/gunicorn
 
 # Set up Daphne (ASGI server for WebSocket support)
 echo "🚦 Configuring Daphne (WebSockets)..."
-sed -i "s|/home/driptamine/litloop_backend_v2|$(pwd)|g" deploy/gunicorn/gunicorn.service
-sed -i "s|User=driptamine|User=$USER|g" deploy/gunicorn/gunicorn.service
-sudo cp deploy/gunicorn/gunicorn.service /etc/systemd/system/daphne.service
+sed -i "s|/home/driptamine/litloop_backend_v2|$(pwd)|g" deploy/gunicorn/daphne.service
+sed -i "s|User=driptamine|User=$USER|g" deploy/gunicorn/daphne.service
+sudo cp deploy/gunicorn/daphne.service /etc/systemd/system/daphne.service
 
 # Set up Gunicorn (WSGI server for HTTP performance)
 echo "🚦 Configuring Gunicorn (HTTP)..."

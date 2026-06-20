@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>WebSocket Test</title>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a2e; color: #eee; }
+    input, button { padding: 8px 12px; margin: 4px; border-radius: 6px; border: none; }
+    input { background: #16213e; color: #eee; width: 300px; }
+    button { background: #0f3460; color: #eee; cursor: pointer; }
+    button:hover { background: #e94560; }
+    #log { margin-top: 16px; background: #16213e; padding: 12px; border-radius: 8px; height: 400px; overflow-y: auto; white-space: pre-wrap; font-size: 13px; }
+    .msg { margin: 4px 0; padding: 4px 8px; border-radius: 4px; }
+    .sent { color: #7ec8e3; }
+    .recv { color: #a8e6cf; }
+    .info { color: #ffd3b6; }
+    .err { color: #ff8b8b; }
+    .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 6px 0; }
+  </style>
+</head>
+<body>
+  <h2>WebSocket Test</h2>
+  <div class="row">
+    <input id="host" placeholder="host:port" value="litloop.duckdns.org" style="width:180px" />
+    <input id="endpoint" value="ws/chat/1/" style="flex:1" />
+  </div>
+  <div class="row">
+    <input id="token" placeholder="JWT token" value="" style="flex:1" />
+    <button onclick="connect()">Connect</button>
+    <button onclick="disconnect()">Disconnect</button>
+  </div>
+  <div class="row">
+    <input id="msgInput" placeholder="Message text" value="hello" style="flex:1" />
+    <button onclick="sendRaw()">Send raw</button>
+  </div>
+  <div>Status: <span id="status">idle</span></div>
+  <div id="log">Ready. Enter JWT + endpoint, click Connect.</div>
+
+  <script>
+    let ws = null;
+    const log = document.getElementById('log');
+    const statusEl = document.getElementById('status');
+    const host = document.getElementById('host');
+    const token = document.getElementById('token');
+    const endpoint = document.getElementById('endpoint');
+    const msgInput = document.getElementById('msgInput');
+
+    function append(text, cls = 'info') {
+      const d = document.createElement('div');
+      d.className = `msg ${cls}`;
+      d.textContent = text;
+      log.appendChild(d);
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function setStatus(s) { statusEl.textContent = s; }
+
+    function connect() {
+      if (ws) ws.close();
+      const t = token.value.trim();
+      const h = host.value.trim();
+      const ep = endpoint.value.trim().replace(/^\/+/, '');
+      const proto = h.includes('duckdns.org') || h.includes('localhost') ? 'wss' : 'ws';
+      // use wss for duckdns, ws for localhost
+      const scheme = h.includes('duckdns.org') ? 'wss' : (h.startsWith('localhost') || h.startsWith('127.0.0.1') || h.startsWith('0.0.0.0') ? 'ws' : (location.protocol === 'https:' ? 'wss' : 'ws'));
+      const url = `${scheme}://${h}/${ep}${t ? '?token=' + t : ''}`;
+      append(`Connecting: ${url}`, 'info');
+      setStatus('connecting');
+      ws = new WebSocket(url);
+
+      ws.onopen = () => {
+        append('Connected', 'info');
+        setStatus('open');
+      };
+
+      ws.onclose = (e) => {
+        append(`Disconnected (code=${e.code} reason="${e.reason}" wasClean=${e.wasClean})`, 'info');
+        setStatus(`closed (${e.code})`);
+        ws = null;
+      };
+
+      ws.onerror = () => {
+        append('Error — check console (F12) for details, likely wrong host/port or CORS', 'err');
+        setStatus('error');
+      };
+
+      ws.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          append(`RECV: ${JSON.stringify(data, null, 2)}`, 'recv');
+        } catch {
+          append(`RECV: ${e.data}`, 'recv');
+        }
+      };
+    }
+
+    function disconnect() {
+      if (ws) { ws.close(); ws = null; setStatus('closed by user'); }
+    }
+
+    function sendRaw() {
+      if (!ws || ws.readyState !== WebSocket.OPEN) { append('Not connected', 'err'); return; }
+      const text = msgInput.value.trim();
+      if (!text) return;
+      const payload = text.startsWith('{') ? text : JSON.stringify({ type: 'chat_message', text });
+      append(`SENT: ${payload}`, 'sent');
+      ws.send(payload);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && document.activeElement === msgInput) sendRaw();
+    });
+  </script>
+</body>
+</html>

@@ -44,9 +44,9 @@ python manage.py shell -c "from django.conf import settings; import boto3; clien
 
 # 8. Update systemd service files from deploy/
 echo "🚦 Updating systemd service files..."
-sed -i "s|/home/driptamine/litloop_backend_v2|$(pwd)|g" deploy/gunicorn/gunicorn.service
-sed -i "s|User=driptamine|User=$USER|g" deploy/gunicorn/gunicorn.service
-sudo cp deploy/gunicorn/gunicorn.service /etc/systemd/system/daphne.service
+sed -i "s|/home/driptamine/litloop_backend_v2|$(pwd)|g" deploy/gunicorn/daphne.service
+sed -i "s|User=driptamine|User=$USER|g" deploy/gunicorn/daphne.service
+sudo cp deploy/gunicorn/daphne.service /etc/systemd/system/daphne.service
 
 sed -i "s|/home/driptamine/litloop_backend_v2|$(pwd)|g" deploy/gunicorn/gunicorn_http.service
 sed -i "s|User=driptamine|User=$USER|g" deploy/gunicorn/gunicorn_http.service
