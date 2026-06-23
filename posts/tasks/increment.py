@@ -5,7 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 from users.models import User
 # from views.models import View
-from posts.models import Post, PostView, PostLike
+from posts.models import Post, PostView, PostLike, PostImpression
 
 
 
@@ -41,3 +41,18 @@ def process_view(user_id, post_id):
     # Update the like count of the post
     # post.views = View.objects.filter(post=post).count()
     # post.save()
+
+
+@shared_task
+def record_impressions_batch(post_ids, user_id):
+    from django.db import models
+    recorded = 0
+    for post_id in post_ids:
+        try:
+            post = Post.objects.get(id=post_id)
+            PostImpression.objects.create(post=post, user_id=user_id)
+            Post.objects.filter(id=post_id).update(impressions_count=models.F('impressions_count') + 1)
+            recorded += 1
+        except Post.DoesNotExist:
+            continue
+    return {'recorded': recorded}

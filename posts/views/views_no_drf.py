@@ -1,9 +1,9 @@
 import json
-from django.db import models
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from posts.models import Post, PostImpression
+from posts.models import Post
 from posts.serializers_no_drf import serialize_post, handle_media_linking
+from posts.tasks import record_impressions_batch
 from users.auth_utils import jwt_required_testable, jwt_optional
 
 @csrf_exempt
@@ -107,14 +107,5 @@ def record_post_impressions(request):
         return JsonResponse({'error': 'post_ids must be a non-empty list'}, status=400)
 
     user = request.user
-    recorded = 0
-    for post_id in post_ids:
-        try:
-            post = Post.objects.get(id=post_id)
-            PostImpression.objects.create(post=post, user=user)
-            Post.objects.filter(id=post_id).update(impressions_count=models.F('impressions_count') + 1)
-            recorded += 1
-        except Post.DoesNotExist:
-            continue
-
-    return JsonResponse({'status': 'ok', 'recorded': recorded})
+    record_impressions_batch.delay(post_ids, user.id)
+    return JsonResponse({'status': 'ok', 'enqueued': len(post_ids)})

@@ -6,10 +6,8 @@ from celery import Celery
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "litloop_project.settings.dev")
 
-broker_url = "amqp://localhost:5672"
-BROKER_URL = os.environ.get('RABBITMQ_URL', 'amqp://guest:guest@localhost:5672/')
-
-redis_url = "redis://localhost:6379/0"
+broker_url = "redis://localhost:6379/0"
+BROKER_URL = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
 rpc_backend = 'rpc://'
 # CELERY_IMPORTS = [
 #     'views.tasks',
