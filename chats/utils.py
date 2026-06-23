@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AnonymousUser
 from users.models import User
 from users.jwt_auth import decode_jwt
+from .models import Chat
 
 def get_user_from_jwt(request):
     """
