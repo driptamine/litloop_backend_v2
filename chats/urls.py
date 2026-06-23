@@ -1,7 +1,7 @@
 from django.urls import path
 from chats.views import (
     chat_list, my_chats, send_message, chat_with_gemini,
-    delete_chat, mark_as_read,
+    delete_chat, mark_as_read, saved_messages_chat,
     upload_chat_attachment, get_ice_servers_api, voice_message_upload_api,
     # Direct
     direct_chat_list, direct_chat_detail,
@@ -27,6 +27,9 @@ urlpatterns = [
     path('group/<int:chat_id>/', group_chat_detail, name='group_chat_detail'),
     path('group/<int:chat_id>/add/', group_add_member, name='group_add_member'),
     path('group/<int:chat_id>/remove/', group_remove_member, name='group_remove_member'),
+
+    # ── Saved Messages ──────────────────────────────────────────
+    path('saved/', saved_messages_chat, name='saved_messages'),
 
     # ── Shared (by chat ID) ──────────────────────────────────────
     path('<int:chat_id>/send/', send_message, name='send_message'),

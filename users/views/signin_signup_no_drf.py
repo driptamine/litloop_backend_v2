@@ -4,6 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth import authenticate
 from users.models import User
 from users.token_utils import generate_tokens_for_user
+from chats.utils import create_saved_messages_chat
 
 def get_tokens_for_user(user):
     return generate_tokens_for_user(user)
@@ -45,6 +46,7 @@ def signup_view(request):
         return JsonResponse({'error': 'Email already exists'}, status=400)
 
     user = User.objects.create_user(username=username, email=email, password=password, avatar=avatar)
+    create_saved_messages_chat(user)
     tokens = get_tokens_for_user(user)
     
     return JsonResponse({

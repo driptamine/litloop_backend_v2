@@ -35,6 +35,19 @@ def get_user_from_jwt(request):
     except Exception:
         return AnonymousUser()
 
+def create_saved_messages_chat(user):
+    """Create or return existing Saved Messages chat for a user."""
+    chat = Chat.objects.filter(is_saved_messages=True, participants=user).first()
+    if chat:
+        return chat
+    chat = Chat.objects.create(
+        chat_type='direct',
+        is_saved_messages=True,
+        name=f'saved-{user.id}',
+    )
+    chat.participants.add(user)
+    return chat
+
 def get_ice_servers():
     """
     Returns a list of ICE servers (STUN/TURN) for WebRTC.

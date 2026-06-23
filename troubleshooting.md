@@ -31,10 +31,15 @@ CHANNEL_LAYERS = {
 
 ### WebSocket connection fails (browser shows "failed")
 
-**1. Check if daphne is running:**
+**1. Check if daphne is running and find its PID:**
 ```bash
 ps aux | grep daphne
 ```
+Example output:
+```
+driptam+ 2117642  ... /home/.../env/bin/daphne -p 8000 litloop_project.asgi:application
+```
+The PID is the second column (`2117642`). Ignore the `grep daphne` line — it's just the search command itself.
 
 **2. Check server logs:**
 ```bash
@@ -43,8 +48,7 @@ tail -f /tmp/daphne.log
 
 **3. Restart daphne after code changes:**
 ```bash
-# Find PID from ps output, then:
-kill <PID>
+kill <PID>  # e.g. kill 2117642
 
 # Restart:
 cd /path/to/project

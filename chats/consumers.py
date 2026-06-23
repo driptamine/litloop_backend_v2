@@ -97,6 +97,17 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     }
                 )
 
+        elif msg_type == 'typing':
+            is_typing = content.get('is_typing', False)
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'user_typing',
+                    'user_id': self.user.id,
+                    'is_typing': is_typing,
+                }
+            )
+
         elif msg_type.startswith('voip_'):
             # Handle VoIP signaling
             await self.channel_layer.group_send(
@@ -145,6 +156,14 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             'type': 'new_message',
             'message': message
         })
+
+    async def user_typing(self, event):
+        if event['user_id'] != self.user.id:
+            await self.send_json({
+                'type': 'typing',
+                'user_id': event['user_id'],
+                'is_typing': event['is_typing'],
+            })
 
     async def voip_signal(self, event):
         # Don't send signal back to sender

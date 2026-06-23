@@ -11,11 +11,15 @@ class Chat(models.Model):
         ('groupchat', 'Group Chat'),
     ]
 
-    chat_type    = models.CharField(max_length=20, choices=CHAT_TYPES, default='direct')
-    name         = models.SlugField(max_length=20, blank=True, null=True)
-    image_url    = models.CharField(max_length=400, blank=True, null=True)
-    description  = models.CharField(max_length=400, blank=True, null=True)
-    participants = models.ManyToManyField(User, related_name="chats", blank=True)
+    chat_type         = models.CharField(max_length=20, choices=CHAT_TYPES, default='direct')
+    name              = models.SlugField(max_length=20, blank=True, null=True)
+    image_url         = models.CharField(max_length=400, blank=True, null=True)
+    description       = models.CharField(max_length=400, blank=True, null=True)
+    participants      = models.ManyToManyField(User, related_name="chats", blank=True)
+    is_saved_messages = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{'Saved - ' if self.is_saved_messages else ''}{self.name or self.chat_type} ({self.id})"
 
 
 class Message(models.Model):

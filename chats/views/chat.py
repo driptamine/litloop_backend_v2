@@ -11,6 +11,7 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from notifications.models import Notification
 from ..models import Chat, Message, VoiceMessage
+from ..utils import create_saved_messages_chat
 from .common import get_authenticated_user
 
 
@@ -28,6 +29,8 @@ def my_chats(request):
     if not user:
         return JsonResponse({"error": "Unauthorized"}, status=401)
 
+    create_saved_messages_chat(user)
+
     epoch = datetime.datetime(2000, 1, 1, tzinfo=datetime.timezone.utc)
     chats = user.chats.annotate(
         last_message_at=Coalesce(
@@ -39,8 +42,8 @@ def my_chats(request):
 
     chats_data = []
     for chat in chats:
-        other_participant = chat.participants.exclude(id=user.id).first()
-        unread_count = chat.messages.exclude(user=user).filter(is_read=False).count()
+        is_saved = chat.is_saved_messages
+        unread_count = 0 if is_saved else chat.messages.exclude(user=user).filter(is_read=False).count()
 
         chat_info = {
             "id": chat.id,
@@ -49,12 +52,18 @@ def my_chats(request):
             "image_url": chat.image_url,
             "description": chat.description,
             "unread_count": unread_count,
-            "other_participant": {
-                "id": other_participant.id,
-                "username": other_participant.username,
-                "avatar": other_participant.avatar
-            } if other_participant else None
+            "is_saved_messages": is_saved,
+            "other_participant": None,
         }
+
+        if not is_saved:
+            other_participant = chat.participants.exclude(id=user.id).first()
+            if other_participant:
+                chat_info["other_participant"] = {
+                    "id": other_participant.id,
+                    "username": other_participant.username,
+                    "avatar": other_participant.avatar,
+                }
 
         last_message = chat.messages.order_by('-created_at').first()
         if last_message:
@@ -142,7 +151,10 @@ def mark_as_read(request, chat_id):
     if not chat.participants.filter(id=user.id).exists():
         return JsonResponse({"error": "Forbidden"}, status=403)
 
-    chat.messages.exclude(user=user).filter(is_read=False).update(is_read=True)
+    if chat.is_saved_messages:
+        chat.messages.filter(is_read=False).update(is_read=True)
+    else:
+        chat.messages.exclude(user=user).filter(is_read=False).update(is_read=True)
 
     return JsonResponse({"status": "success", "chat_id": chat_id})
 
@@ -213,6 +225,13 @@ def send_message(request, chat_id):
             }
         )
 
+        if chat.is_saved_messages:
+            return JsonResponse({
+                "status": "sent",
+                "chat_id": chat.id,
+                "message": message_data
+            })
+
         participants = chat.participants.exclude(id=user.id)
         content_type = ContentType.objects.get_for_model(message)
 
@@ -274,5 +293,46 @@ def delete_chat(request, chat_id):
     if not chat.participants.filter(id=user.id).exists():
         return JsonResponse({"error": "Forbidden"}, status=403)
 
+    if chat.is_saved_messages:
+        return JsonResponse({"error": "Cannot delete Saved Messages"}, status=400)
+
     chat.delete()
     return JsonResponse({"status": "deleted", "id": chat_id})
+
+
+@require_GET
+def saved_messages_chat(request):
+    """Return the Saved Messages chat for the current user, creating it if needed."""
+    user = get_authenticated_user(request)
+    if not user:
+        return JsonResponse({"error": "Unauthorized"}, status=401)
+
+    chat = create_saved_messages_chat(user)
+
+    chat.messages.filter(is_read=False).update(is_read=True)
+
+    messages_queryset = chat.messages.all().select_related('user').prefetch_related('voice_messages').order_by('created_at')
+    messages = []
+    for msg in messages_queryset:
+        voice = msg.voice_messages.first()
+        voice_data = {
+            'id': voice.id,
+            'url': voice.url,
+            'duration': voice.duration
+        } if voice else None
+
+        messages.append({
+            'id': msg.id,
+            'username': msg.user.username if msg.user else 'AI',
+            'text': msg.text,
+            'created_at': msg.created_at.isoformat(),
+            'attachments': msg.attachments,
+            'voice_message': voice_data,
+        })
+
+    return JsonResponse({
+        "id": chat.id,
+        "chat_type": chat.chat_type,
+        "is_saved_messages": True,
+        "messages": messages,
+    })

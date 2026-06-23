@@ -5,6 +5,7 @@ from django.contrib.auth import authenticate
 from rest_framework_simplejwt.tokens import RefreshToken
 from users.models import User
 from users.serializers import RegisterSerializer, LoginSerializer
+from chats.utils import create_saved_messages_chat
 from drf_yasg.utils import swagger_auto_schema
 
 
@@ -22,6 +23,7 @@ class SignupView(APIView):
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
+            create_saved_messages_chat(user)
             tokens = get_tokens_for_user(user)
             return Response({'token': tokens['access'], **tokens}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
