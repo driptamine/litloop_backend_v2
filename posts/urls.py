@@ -16,6 +16,7 @@ from posts.views import (
     post_detail,
     update_post_no_drf,
     delete_post_no_drf,
+    record_post_impressions,
 )
 
 urlpatterns = [
@@ -45,6 +46,9 @@ urlpatterns = [
 
 
     # ──────── FEED ────────
+
+    # ──────── IMPRESSIONS ────────
+    path('impressions/batch/', record_post_impressions, name='post-impressions-batch'),
 
     # ──────── MISC ────────
 ]

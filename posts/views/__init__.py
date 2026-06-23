@@ -13,7 +13,8 @@ from .views_no_drf import (
     update_post_no_drf, 
     delete_post_no_drf,
     list_of_posts,
-    post_detail
+    post_detail,
+    record_post_impressions,
 )
 
 from .create_post_with_photos_and_videos import create_post_with_photos_and_videos

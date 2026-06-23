@@ -1,7 +1,8 @@
 import json
+from django.db import models
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from posts.models import Post
+from posts.models import Post, PostImpression
 from posts.serializers_no_drf import serialize_post, handle_media_linking
 from users.auth_utils import jwt_required_testable, jwt_optional
 
@@ -88,3 +89,32 @@ def post_detail(request, post_id):
         return JsonResponse(serialize_post(post, request))
     except Post.DoesNotExist:
         return JsonResponse({'error': 'Post not found'}, status=404)
+
+
+@csrf_exempt
+@jwt_required_testable
+def record_post_impressions(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST allowed'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    post_ids = data.get('post_ids', [])
+    if not post_ids or not isinstance(post_ids, list):
+        return JsonResponse({'error': 'post_ids must be a non-empty list'}, status=400)
+
+    user = request.user
+    recorded = 0
+    for post_id in post_ids:
+        try:
+            post = Post.objects.get(id=post_id)
+            PostImpression.objects.create(post=post, user=user)
+            Post.objects.filter(id=post_id).update(impressions_count=models.F('impressions_count') + 1)
+            recorded += 1
+        except Post.DoesNotExist:
+            continue
+
+    return JsonResponse({'status': 'ok', 'recorded': recorded})
