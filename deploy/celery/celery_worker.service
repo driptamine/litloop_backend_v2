@@ -1,0 +1,24 @@
+[Unit]
+Description=Celery worker for LitLoop (background tasks)
+After=network.target redis-server.service
+Wants=redis-server.service
+
+[Service]
+User=driptamine
+Group=www-data
+WorkingDirectory=/home/driptamine/litloop_backend_v2
+Environment=DJANGO_SETTINGS_MODULE=litloop_project.settings.prod
+
+# Single solo worker — fits e2-micro 1GB RAM
+ExecStart=/home/driptamine/litloop_backend_v2/env/bin/celery \
+    -A litloop_project \
+    worker \
+    --concurrency=1 \
+    --pool=solo \
+    -Q default \
+    -l info
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
