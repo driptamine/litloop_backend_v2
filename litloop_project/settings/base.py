@@ -480,6 +480,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "update_listings_thumbnails",
         "schedule": crontab(minute=2, hour="*/30"),
     },
+    "flush-redis-impressions-likes": {
+        "task": "posts.tasks.increment.flush_redis_impressions_likes",
+        "schedule": 30.0,
+    },
 }
 # TODO: beat, delete chunks from media root
 # chunks_dir after xx days...(also uploads_dir)

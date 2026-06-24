@@ -24,7 +24,7 @@ app.autodiscover_tasks(lambda: settings.INSTALLED_APPS + settings.INSTALLED_APPS
 
 app.conf.beat_schedule = {
     'flush-redis-impressions-likes': {
-        'task': 'posts.tasks.flush_redis_impressions_likes',
+        'task': 'posts.tasks.increment.flush_redis_impressions_likes',
         'schedule': 30.0,
     },
 }

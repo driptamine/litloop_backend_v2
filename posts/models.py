@@ -76,7 +76,7 @@ class PostDislike(models.Model):
 
 class PostImpression(models.Model):
     post        = models.ForeignKey(Post, on_delete=models.CASCADE)
-    user        = models.ForeignKey(User, on_delete=models.CASCADE)
+    user        = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
 
 class PostView(models.Model):
     post        = models.ForeignKey(Post, on_delete=models.CASCADE)

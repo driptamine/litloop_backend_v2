@@ -62,13 +62,21 @@ def record_impressions_batch(post_ids, user_id):
 def flush_redis_impressions_likes():
     from posts.redis_utils import flush_impressions as flush_post_impressions, flush_likes as flush_post_likes
     from movies.redis_utils import flush_impressions as flush_movie_impressions, flush_likes as flush_movie_likes
-    post_impressions = flush_post_impressions()
-    post_likes = flush_post_likes()
-    movie_impressions = flush_movie_impressions()
-    movie_likes = flush_movie_likes()
-    return {
-        'post_impressions_flushed': post_impressions,
-        'post_likes_synced': post_likes,
-        'movie_impressions_flushed': movie_impressions,
-        'movie_likes_synced': movie_likes,
-    }
+    result = {}
+    try:
+        result['post_impressions_flushed'] = flush_post_impressions()
+    except Exception as e:
+        result['post_impressions_error'] = str(e)
+    try:
+        result['post_likes_synced'] = flush_post_likes()
+    except Exception as e:
+        result['post_likes_error'] = str(e)
+    try:
+        result['movie_impressions_flushed'] = flush_movie_impressions()
+    except Exception as e:
+        result['movie_impressions_error'] = str(e)
+    try:
+        result['movie_likes_synced'] = flush_movie_likes()
+    except Exception as e:
+        result['movie_likes_error'] = str(e)
+    return result

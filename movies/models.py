@@ -68,7 +68,7 @@ class WatchlistItem(models.Model):
 
 class MovieImpression(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
-    user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+    user = models.ForeignKey('users.User', on_delete=models.CASCADE, null=True, blank=True)
 
 class MovieView(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
