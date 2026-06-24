@@ -93,8 +93,12 @@ def gcs_upload_file(file_obj, destination_blob_name: str, content_type: str = No
     """
     Uploads a file object to GCS.
     Tries service-account auth first; falls back to HMAC (XML API) if that fails.
+    Falls back to Cloudflare R2 if GCS credentials are not configured.
     """
-    credentials = gcs_get_credentials()
+    try:
+        credentials = gcs_get_credentials()
+    except ValueError:
+        return _fallback_r2_upload(file_obj, destination_blob_name, content_type)
 
     if credentials.hmac_access_key and credentials.hmac_secret:
         return _gcs_upload_hmac(file_obj, destination_blob_name, content_type, credentials)
@@ -104,6 +108,10 @@ def gcs_upload_file(file_obj, destination_blob_name: str, content_type: str = No
     blob = bucket.blob(destination_blob_name)
     blob.upload_from_file(file_obj, content_type=content_type)
     return blob.public_url
+
+def _fallback_r2_upload(file_obj, destination_blob_name, content_type):
+    from .r2_utils import r2_upload_file
+    return r2_upload_file(file_obj, destination_blob_name, content_type=content_type)
 
 def _gcs_upload_hmac(file_obj, destination_blob_name, content_type, credentials):
     """Upload via GCS XML API using HMAC authentication."""
