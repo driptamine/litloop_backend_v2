@@ -15,6 +15,7 @@ from .views_no_drf import (
     list_of_posts,
     post_detail,
     record_post_impressions,
+    post_like_view,
 )
 
 from .create_post_with_photos_and_videos import create_post_with_photos_and_videos

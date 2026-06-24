@@ -1,7 +1,8 @@
 import json
+from django.db import models
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from posts.models import Post
+from posts.models import Post, PostLike
 from posts.serializers_no_drf import serialize_post, handle_media_linking
 from posts.tasks import record_impressions_batch
 from users.auth_utils import jwt_required_testable, jwt_optional
@@ -109,3 +110,32 @@ def record_post_impressions(request):
     user = request.user
     record_impressions_batch.delay(post_ids, user.id)
     return JsonResponse({'status': 'ok', 'enqueued': len(post_ids)})
+
+
+@csrf_exempt
+@jwt_required_testable
+def post_like_view(request, post_id):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Only POST allowed'}, status=405)
+
+    try:
+        post = Post.objects.get(id=post_id)
+    except Post.DoesNotExist:
+        return JsonResponse({'error': 'Post not found'}, status=404)
+
+    user = request.user
+    like, created = PostLike.objects.get_or_create(post=post, user=user)
+
+    if created:
+        Post.objects.filter(id=post_id).update(likes_count=models.F('likes_count') + 1)
+        liked = True
+    else:
+        like.delete()
+        Post.objects.filter(id=post_id).update(likes_count=models.F('likes_count') - 1)
+        liked = False
+
+    post.refresh_from_db()
+    return JsonResponse({
+        'liked': liked,
+        'likes_count': post.likes_count,
+    })

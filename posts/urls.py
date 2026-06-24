@@ -17,6 +17,7 @@ from posts.views import (
     update_post_no_drf,
     delete_post_no_drf,
     record_post_impressions,
+    post_like_view,
 )
 
 urlpatterns = [
@@ -49,6 +50,7 @@ urlpatterns = [
 
     # ──────── IMPRESSIONS ────────
     path('impressions/batch/', record_post_impressions, name='post-impressions-batch'),
+    path('<int:post_id>/like/', post_like_view, name='post-like'),
 
     # ──────── MISC ────────
 ]
