@@ -60,7 +60,15 @@ def record_impressions_batch(post_ids, user_id):
 
 @shared_task
 def flush_redis_impressions_likes():
-    from posts.redis_utils import flush_impressions, flush_likes
-    impressions = flush_impressions()
-    likes = flush_likes()
-    return {'impressions_flushed': impressions, 'likes_synced': likes}
+    from posts.redis_utils import flush_impressions as flush_post_impressions, flush_likes as flush_post_likes
+    from movies.redis_utils import flush_impressions as flush_movie_impressions, flush_likes as flush_movie_likes
+    post_impressions = flush_post_impressions()
+    post_likes = flush_post_likes()
+    movie_impressions = flush_movie_impressions()
+    movie_likes = flush_movie_likes()
+    return {
+        'post_impressions_flushed': post_impressions,
+        'post_likes_synced': post_likes,
+        'movie_impressions_flushed': movie_impressions,
+        'movie_likes_synced': movie_likes,
+    }

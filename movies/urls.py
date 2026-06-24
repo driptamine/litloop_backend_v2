@@ -8,7 +8,10 @@ from movies.views import (
 from movies.views_no_drf import (
     views_up_view,
     add_movie_view,
-    feed_movies_view
+    feed_movies_view,
+    list_movies_view,
+    record_movie_impressions,
+    movie_like_view,
 )
 
 urlpatterns = [
@@ -19,4 +22,8 @@ urlpatterns = [
     path('views/up/', views_up_view, name='views_up'),
     path('add/', add_movie_view, name='add_movie'),
     path('feed/', feed_movies_view, name='feed_movies'),
+    path('list/', list_movies_view, name='list_movies'),
+
+    path('impressions/batch/', record_movie_impressions, name='movie-impressions-batch'),
+    path('<int:tmdb_id>/like/', movie_like_view, name='movie-like'),
 ]
