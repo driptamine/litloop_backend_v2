@@ -22,7 +22,12 @@ app.config_from_object("django.conf:settings", namespace='CELERY')
 # app.autodiscover_tasks()
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS + settings.INSTALLED_APPS_WITH_APPCONFIGS)
 
-# app.conf.beat_schedule = app.conf.CELERY_BEAT_SCHEDULE
+app.conf.beat_schedule = {
+    'flush-redis-impressions-likes': {
+        'task': 'posts.tasks.flush_redis_impressions_likes',
+        'schedule': 30.0,
+    },
+}
 app.conf.broker_transport_options = {"visibility_timeout": 60 * 60 * 24}  # 1 day
 # http://docs.celeryproject.org/en/latest/getting-started/brokers/redis.html#redis-caveats
 

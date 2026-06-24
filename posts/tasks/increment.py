@@ -56,3 +56,11 @@ def record_impressions_batch(post_ids, user_id):
         except Post.DoesNotExist:
             continue
     return {'recorded': recorded}
+
+
+@shared_task
+def flush_redis_impressions_likes():
+    from posts.redis_utils import flush_impressions, flush_likes
+    impressions = flush_impressions()
+    likes = flush_likes()
+    return {'impressions_flushed': impressions, 'likes_synced': likes}

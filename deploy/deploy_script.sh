@@ -65,16 +65,18 @@ echo "🚦 Configuring Celery worker..."
 sed -i "s|/home/driptamine/litloop_backend_v2|$(pwd)|g" deploy/celery/celery_worker.service
 sed -i "s|User=driptamine|User=$USER|g" deploy/celery/celery_worker.service
 sudo cp deploy/celery/celery_worker.service /etc/systemd/system/celery_worker.service
+sudo cp deploy/celery/celery_beat.service /etc/systemd/system/celery_beat.service
 
 sudo systemctl daemon-reload
-sudo systemctl enable redis-server daphne gunicorn_http celery_worker
+sudo systemctl enable redis-server daphne gunicorn_http celery_worker celery_beat
 sudo systemctl restart redis-server
-sudo systemctl restart daphne gunicorn_http celery_worker
+sudo systemctl restart daphne gunicorn_http celery_worker celery_beat
 
 # Add handy aliases (idempotent)
 grep -q "alias guni=" ~/.bashrc 2>/dev/null || echo "alias guni='sudo systemctl restart gunicorn_http && sudo systemctl status gunicorn_http'" >> ~/.bashrc
 grep -q "alias daph=" ~/.bashrc 2>/dev/null || echo "alias daph='sudo systemctl restart daphne && sudo systemctl status daphne'" >> ~/.bashrc
 grep -q "alias celery_worker=" ~/.bashrc 2>/dev/null || echo "alias celery_worker='sudo systemctl restart celery_worker && sudo systemctl status celery_worker'" >> ~/.bashrc
+grep -q "alias celery_beat=" ~/.bashrc 2>/dev/null || echo "alias celery_beat='sudo systemctl restart celery_beat && sudo systemctl status celery_beat'" >> ~/.bashrc
 
 # Set up Nginx
 echo "🌐 Configuring Nginx..."

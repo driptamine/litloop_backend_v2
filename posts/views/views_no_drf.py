@@ -1,10 +1,9 @@
 import json
-from django.db import models
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
-from posts.models import Post, PostLike
+from posts.models import Post
+from posts import redis_utils
 from posts.serializers_no_drf import serialize_post, handle_media_linking
-from posts.tasks import record_impressions_batch
 from users.auth_utils import jwt_required_testable, jwt_optional
 
 @csrf_exempt
@@ -107,8 +106,8 @@ def record_post_impressions(request):
     if not post_ids or not isinstance(post_ids, list):
         return JsonResponse({'error': 'post_ids must be a non-empty list'}, status=400)
 
-    user = request.user
-    record_impressions_batch.delay(post_ids, user.id)
+    for post_id in post_ids:
+        redis_utils.record_impression(post_id)
     return JsonResponse({'status': 'ok', 'enqueued': len(post_ids)})
 
 
@@ -124,18 +123,19 @@ def post_like_view(request, post_id):
         return JsonResponse({'error': 'Post not found'}, status=404)
 
     user = request.user
-    like, created = PostLike.objects.get_or_create(post=post, user=user)
 
-    if created:
-        Post.objects.filter(id=post_id).update(likes_count=models.F('likes_count') + 1)
-        liked = True
-    else:
-        like.delete()
-        Post.objects.filter(id=post_id).update(likes_count=models.F('likes_count') - 1)
+    if redis_utils.is_liked(post_id, user.id):
+        redis_utils.unlike_post(post_id, user.id)
         liked = False
+    else:
+        redis_utils.like_post(post_id, user.id)
+        liked = True
 
-    post.refresh_from_db()
+    count = redis_utils.get_likes_count(post_id)
+    if count is None:
+        count = post.likes_count
+
     return JsonResponse({
         'liked': liked,
-        'likes_count': post.likes_count,
+        'likes_count': count,
     })

@@ -1,0 +1,20 @@
+[Unit]
+Description=Celery beat scheduler for LitLoop (periodic tasks)
+After=network.target redis-server.service
+Wants=redis-server.service
+
+[Service]
+User=driptamine
+Group=www-data
+WorkingDirectory=/home/driptamine/litloop_backend_v2
+Environment=DJANGO_SETTINGS_MODULE=litloop_project.settings.prod
+
+ExecStart=/home/driptamine/litloop_backend_v2/env/bin/celery \
+    -A litloop_project \
+    beat \
+    -l info
+
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
