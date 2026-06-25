@@ -15,7 +15,6 @@ ExecStart=/home/driptamine/litloop_backend_v2/env/bin/celery \
     worker \
     --concurrency=1 \
     --pool=solo \
-    -Q default \
     -l info
 
 Restart=always
