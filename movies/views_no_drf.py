@@ -62,6 +62,7 @@ def feed_movies_view(request):
         )
 
         item['db_id'] = movie.id
+        item['impressions_count'] = redis_utils.get_impressions(movie.id)
 
         if created or not movie.imdb_id:
             scrape_tmdb_movie.delay(tmdb_id)
@@ -87,6 +88,12 @@ def list_movies_view(request):
 
     items, paginator = paginate_queryset(queryset, request, page_size=20)
     response_data = get_paginated_response(items, paginator, serialize_movie, request)
+
+    for item in response_data.get('results', []):
+        db_id = item.get('id')
+        if db_id:
+            item['impressions_count'] = redis_utils.get_impressions(db_id)
+
     return JsonResponse(response_data)
 
 
