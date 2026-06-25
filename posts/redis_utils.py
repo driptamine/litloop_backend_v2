@@ -1,6 +1,12 @@
 import redis
 
-redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
+_redis_client = None
+
+def get_redis():
+    global _redis_client
+    if _redis_client is None:
+        _redis_client = redis.StrictRedis(host='localhost', port=6379, db=0, decode_responses=True)
+    return _redis_client
 
 IMPRESSION_KEY = 'post:{post_id}:impressions'
 LIKES_COUNT_KEY = 'post:{post_id}:likes_count'
@@ -12,8 +18,9 @@ LIKE_FLUSH_KEY = 'post:likes:pending'
 # ─── IMPRESSIONS ───
 
 def record_impression(post_id):
+    r = get_redis()
     key = IMPRESSION_KEY.format(post_id=post_id)
-    pipe = redis_client.pipeline()
+    pipe = r.pipeline()
     pipe.incr(key)
     pipe.expire(key, 86400)
     pipe.sadd(IMPRESSION_FLUSH_KEY, post_id)
@@ -21,24 +28,27 @@ def record_impression(post_id):
 
 
 def get_impressions(post_id):
-    val = redis_client.get(IMPRESSION_KEY.format(post_id=post_id))
+    r = get_redis()
+    val = r.get(IMPRESSION_KEY.format(post_id=post_id))
     return int(val) if val else 0
 
 
 def pop_impression_post_ids():
-    ids = redis_client.smembers(IMPRESSION_FLUSH_KEY)
+    r = get_redis()
+    ids = r.smembers(IMPRESSION_FLUSH_KEY)
     if ids:
-        redis_client.delete(IMPRESSION_FLUSH_KEY)
+        r.delete(IMPRESSION_FLUSH_KEY)
     return {int(i) for i in ids}
 
 
 def flush_impressions(post_ids=None):
+    r = get_redis()
     from django.db import models
     from posts.models import Post, PostImpression
     ids = post_ids or pop_impression_post_ids()
     if not ids:
         return 0
-    pipe = redis_client.pipeline()
+    pipe = r.pipeline()
     for pid in ids:
         pipe.getdel(IMPRESSION_KEY.format(post_id=pid))
     results = pipe.execute()
@@ -62,10 +72,11 @@ def flush_impressions(post_ids=None):
 # ─── LIKES ───
 
 def like_post(post_id, user_id):
+    r = get_redis()
     liked_by_key = LIKED_BY_KEY.format(post_id=post_id)
-    added = redis_client.sadd(liked_by_key, user_id)
+    added = r.sadd(liked_by_key, user_id)
     if added:
-        pipe = redis_client.pipeline()
+        pipe = r.pipeline()
         pipe.incr(LIKES_COUNT_KEY.format(post_id=post_id))
         pipe.expire(liked_by_key, 86400)
         pipe.expire(LIKES_COUNT_KEY.format(post_id=post_id), 86400)
@@ -75,10 +86,11 @@ def like_post(post_id, user_id):
 
 
 def unlike_post(post_id, user_id):
+    r = get_redis()
     liked_by_key = LIKED_BY_KEY.format(post_id=post_id)
-    removed = redis_client.srem(liked_by_key, user_id)
+    removed = r.srem(liked_by_key, user_id)
     if removed:
-        pipe = redis_client.pipeline()
+        pipe = r.pipeline()
         pipe.decr(LIKES_COUNT_KEY.format(post_id=post_id))
         pipe.sadd(LIKE_FLUSH_KEY, post_id)
         pipe.execute()
@@ -86,30 +98,34 @@ def unlike_post(post_id, user_id):
 
 
 def is_liked(post_id, user_id):
-    return redis_client.sismember(LIKED_BY_KEY.format(post_id=post_id), user_id)
+    r = get_redis()
+    return r.sismember(LIKED_BY_KEY.format(post_id=post_id), user_id)
 
 
 def get_likes_count(post_id):
-    val = redis_client.get(LIKES_COUNT_KEY.format(post_id=post_id))
+    r = get_redis()
+    val = r.get(LIKES_COUNT_KEY.format(post_id=post_id))
     if val is not None:
         return int(val)
     return None
 
 
 def pop_like_post_ids():
-    ids = redis_client.smembers(LIKE_FLUSH_KEY)
+    r = get_redis()
+    ids = r.smembers(LIKE_FLUSH_KEY)
     if ids:
-        redis_client.delete(LIKE_FLUSH_KEY)
+        r.delete(LIKE_FLUSH_KEY)
     return {int(i) for i in ids}
 
 
 def flush_likes(post_ids=None):
+    r = get_redis()
     from django.db import models
     from posts.models import Post
     ids = post_ids or pop_like_post_ids()
     if not ids:
         return 0
-    pipe = redis_client.pipeline()
+    pipe = r.pipeline()
     liked_by_keys = [LIKED_BY_KEY.format(post_id=pid) for pid in ids]
     for key in liked_by_keys:
         pipe.scard(key)

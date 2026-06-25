@@ -10,6 +10,7 @@ Environment=DJANGO_SETTINGS_MODULE=litloop_project.settings.prod
 
 # Run with multiple workers for better HTTP performance
 ExecStart=/home/driptamine/litloop_backend_v2/env/bin/gunicorn \
+    --preload \
     --workers 2 \
     --max-requests 10000 \
     --max-requests-jitter 1000 \
