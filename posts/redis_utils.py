@@ -12,12 +12,16 @@ LIKE_FLUSH_KEY = 'post:likes:pending'
 # ─── IMPRESSIONS ───
 
 def record_impression(post_id):
+    import logging
+    logger = logging.getLogger(__name__)
     key = IMPRESSION_KEY.format(post_id=post_id)
     pipe = redis_client.pipeline()
     pipe.incr(key)
     pipe.expire(key, 86400)
     pipe.sadd(IMPRESSION_FLUSH_KEY, post_id)
-    pipe.execute()
+    results = pipe.execute()
+    pending_after = redis_client.smembers(IMPRESSION_FLUSH_KEY)
+    logger.warning('RECORD_DEBUG post_id=%s INCR=%s SADD_result=%s pending_after=%s', post_id, results[0], results[2], pending_after)
 
 
 def get_impressions(post_id):
