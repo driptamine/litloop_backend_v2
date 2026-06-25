@@ -7,7 +7,10 @@ from uuid import UUID
 from datetime import datetime
 
 from videos.models import Video, VideoWatchProgress
-from videos.cassandra_models import UserVideoPlayback
+try:
+    from videos.cassandra_models import UserVideoPlayback
+except ImportError:
+    UserVideoPlayback = None
 
 import redis
 
@@ -38,13 +41,14 @@ def save_playback_time(request):
         redis_key = f"playback:{request.user.id}:{video_id}"
         redis_client.set(redis_key, playback_time, ex=86400)
 
-        # Save to Cassandra
-        UserVideoPlayback.create(
-            user_id=UUID(str(request.user.id)),
-            video_id=UUID(str(video_id)),
-            playback_time=float(playback_time),
-            updated_at=datetime.utcnow()
-        )
+        # Save to Cassandra (optional dependency)
+        if UserVideoPlayback is not None:
+            UserVideoPlayback.create(
+                user_id=UUID(str(request.user.id)),
+                video_id=UUID(str(video_id)),
+                playback_time=float(playback_time),
+                updated_at=datetime.utcnow()
+            )
 
         # Optional: Save to Django model
         obj, _ = VideoWatchProgress.objects.get_or_create(user=request.user, video=video)
@@ -72,15 +76,14 @@ def get_playback_time(request):
     if redis_time:
         return JsonResponse({'playback_time': float(redis_time)})
 
-    try:
-        row = UserVideoPlayback.objects(
-            user_id=UUID(str(request.user.id)),
-            video_id=UUID(str(video_id))
-        ).first()
+    if UserVideoPlayback is not None:
+        try:
+            row = UserVideoPlayback.objects(
+                user_id=UUID(str(request.user.id)),
+                video_id=UUID(str(video_id))
+            ).first()
 
-        if row:
-            return JsonResponse({'playback_time': float(row.playback_time)})
-        else:
-            return JsonResponse({'playback_time': 0.0})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+            if row:
+                return JsonResponse({'playback_time': float(row.playback_time)})
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)

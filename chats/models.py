@@ -64,6 +64,21 @@ class VoiceMessage(models.Model):
     user         = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     created_at   = models.DateTimeField(auto_now_add=True)
 
+    transcription        = models.TextField(blank=True, null=True)
+    transcription_language = models.CharField(max_length=10, blank=True, null=True)
+    transcribed_at       = models.DateTimeField(null=True, blank=True)
+    transcription_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('not_requested', 'Not requested'),
+            ('pending', 'Pending'),
+            ('processing', 'Processing'),
+            ('completed', 'Completed'),
+            ('failed', 'Failed'),
+        ],
+        default='not_requested',
+    )
+
     @property
     def url(self):
         from django.conf import settings

@@ -22,6 +22,7 @@ elasticsearch
 elasticsearch-dsl
 filetype
 google-genai
+google-cloud-compute
 google-cloud-storage
 attrs
 gunicorn

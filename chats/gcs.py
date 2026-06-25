@@ -92,7 +92,7 @@ def gcs_generate_signed_url(*, file_path: str, file_type: str, method: str = 'PU
 def gcs_upload_file(file_obj, destination_blob_name: str, content_type: str = None):
     """
     Uploads a file object to GCS.
-    Tries service-account auth first; falls back to HMAC (XML API) if that fails.
+    Tries HMAC auth first; falls back to service-account/ADC on 403.
     Falls back to Cloudflare R2 if GCS credentials are not configured.
     """
     try:
@@ -101,7 +101,10 @@ def gcs_upload_file(file_obj, destination_blob_name: str, content_type: str = No
         return _fallback_r2_upload(file_obj, destination_blob_name, content_type)
 
     if credentials.hmac_access_key and credentials.hmac_secret:
-        return _gcs_upload_hmac(file_obj, destination_blob_name, content_type, credentials)
+        try:
+            return _gcs_upload_hmac(file_obj, destination_blob_name, content_type, credentials)
+        except requests.HTTPError:
+            file_obj.seek(0)
 
     client = gcs_get_client()
     bucket = client.bucket(credentials.bucket_name)

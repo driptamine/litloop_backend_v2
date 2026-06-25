@@ -57,7 +57,10 @@ def _chat_list_by_type(request, chat_type):
             voice_data = {
                 'id': voice.id,
                 'url': voice.url,
-                'duration': voice.duration
+                'duration': voice.duration,
+                'transcription': voice.transcription,
+                'transcription_status': voice.transcription_status,
+                'transcription_language': voice.transcription_language,
             } if voice else None
 
             chat_info["last_message"] = {

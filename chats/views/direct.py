@@ -45,7 +45,10 @@ def direct_chat_detail(request, user_id):
         voice_data = {
             'id': voice.id,
             'url': voice.url,
-            'duration': voice.duration
+            'duration': voice.duration,
+            'transcription': voice.transcription,
+            'transcription_status': voice.transcription_status,
+            'transcription_language': voice.transcription_language,
         } if voice else None
 
         messages.append({

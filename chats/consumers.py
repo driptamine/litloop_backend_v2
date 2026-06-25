@@ -301,7 +301,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     voice_data = {
                         'id': voice.id,
                         'url': voice.url,
-                        'duration': voice.duration
+                        'duration': voice.duration,
+                        'transcription': voice.transcription,
+                        'transcription_status': voice.transcription_status,
+                        'transcription_language': voice.transcription_language,
                     }
                 except VoiceMessage.DoesNotExist:
                     pass

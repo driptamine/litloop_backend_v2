@@ -3,6 +3,8 @@ from chats.views import (
     chat_list, my_chats, send_message, chat_with_gemini,
     delete_chat, mark_as_read, saved_messages_chat,
     upload_chat_attachment, get_ice_servers_api, voice_message_upload_api,
+    # Transcription
+    trigger_transcription, transcription_callback, transcription_status,
     # Direct
     direct_chat_list, direct_chat_detail,
     # Group
@@ -16,6 +18,9 @@ urlpatterns = [
 
     # Voice Messages
     path('voice/upload/', voice_message_upload_api, name='voice_upload'),
+    path('voice/<int:voice_id>/transcribe/', trigger_transcription, name='voice_transcribe'),
+    path('voice/transcribe-callback/', transcription_callback, name='voice_transcribe_callback'),
+    path('voice/<int:voice_id>/status/', transcription_status, name='voice_transcribe_status'),
 
     # ── Direct Chats ──────────────────────────────────────────────
     path('direct/', direct_chat_list, name='direct_chat_list'),

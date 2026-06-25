@@ -71,7 +71,10 @@ def my_chats(request):
             voice_data = {
                 'id': voice.id,
                 'url': voice.url,
-                'duration': voice.duration
+                'duration': voice.duration,
+                'transcription': voice.transcription,
+                'transcription_status': voice.transcription_status,
+                'transcription_language': voice.transcription_language,
             } if voice else None
 
             chat_info["last_message"] = {
@@ -115,7 +118,10 @@ def chat_detail(request, chat_id):
         voice_data = {
             'id': voice.id,
             'url': voice.url,
-            'duration': voice.duration
+            'duration': voice.duration,
+            'transcription': voice.transcription,
+            'transcription_status': voice.transcription_status,
+            'transcription_language': voice.transcription_language,
         } if voice else None
 
         messages.append({
@@ -202,7 +208,10 @@ def send_message(request, chat_id):
             voice_data = {
                 'id': voice.id,
                 'url': voice.url,
-                'duration': voice.duration
+                'duration': voice.duration,
+                'transcription': voice.transcription,
+                'transcription_status': voice.transcription_status,
+                'transcription_language': voice.transcription_language,
             }
 
         channel_layer = get_channel_layer()
@@ -318,7 +327,10 @@ def saved_messages_chat(request):
         voice_data = {
             'id': voice.id,
             'url': voice.url,
-            'duration': voice.duration
+            'duration': voice.duration,
+            'transcription': voice.transcription,
+            'transcription_status': voice.transcription_status,
+            'transcription_language': voice.transcription_language,
         } if voice else None
 
         messages.append({
