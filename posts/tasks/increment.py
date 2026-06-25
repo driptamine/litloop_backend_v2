@@ -60,24 +60,13 @@ def record_impressions_batch(post_ids, user_id):
 
 @shared_task
 def flush_redis_impressions_likes():
-    import logging
-    logger = logging.getLogger(__name__)
-    from posts.redis_utils import flush_impressions as flush_post_impressions, flush_likes as flush_post_likes, redis_client as post_redis, IMPRESSION_FLUSH_KEY
+    from posts.redis_utils import flush_impressions as flush_post_impressions, flush_likes as flush_post_likes
     from movies.redis_utils import flush_impressions as flush_movie_impressions, flush_likes as flush_movie_likes
     result = {}
     try:
-        pending = post_redis.smembers(IMPRESSION_FLUSH_KEY)
-        logger.warning('FLUSH_DEBUG post pending before pop: %s', pending)
-        if pending:
-            for pid in pending:
-                val = post_redis.get(f'post:{pid}:impressions')
-                logger.warning('FLUSH_DEBUG post:%s:impressions = %s', pid, val)
-        flushed = flush_post_impressions()
-        result['post_impressions_flushed'] = flushed
-        logger.warning('FLUSH_DEBUG post_impressions_flushed = %s', flushed)
+        result['post_impressions_flushed'] = flush_post_impressions()
     except Exception as e:
         result['post_impressions_error'] = str(e)
-        logger.warning('FLUSH_DEBUG post error: %s', e)
     try:
         result['post_likes_synced'] = flush_post_likes()
     except Exception as e:
