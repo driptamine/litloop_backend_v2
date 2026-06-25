@@ -4,3 +4,7 @@
 venv_3.9/
 .env
 .env.examples
+
+dump.rdb
+celerybeat-schedule
+
