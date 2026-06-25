@@ -482,7 +482,7 @@ CELERY_BEAT_SCHEDULE = {
     },
     "flush-redis-impressions-likes": {
         "task": "posts.tasks.increment.flush_redis_impressions_likes",
-        "schedule": 30.0,
+        "schedule": 1.0,
     },
 }
 # TODO: beat, delete chunks from media root
