@@ -50,8 +50,10 @@ def flush_impressions(post_ids=None):
         return 0
     pipe = r.pipeline()
     for pid in ids:
-        pipe.getdel(IMPRESSION_KEY.format(post_id=pid))
+        pipe.get(IMPRESSION_KEY.format(post_id=pid))
+        pipe.delete(IMPRESSION_KEY.format(post_id=pid))
     results = pipe.execute()
+    results = [results[i] for i in range(0, len(results), 2)]
     recorded = 0
     for pid, raw in zip(ids, results):
         count = int(raw) if raw else 0

@@ -48,8 +48,10 @@ def flush_impressions(movie_ids=None):
         return 0
     pipe = r.pipeline()
     for mid in ids:
-        pipe.getdel(IMPRESSION_KEY.format(movie_id=mid))
+        pipe.get(IMPRESSION_KEY.format(movie_id=mid))
+        pipe.delete(IMPRESSION_KEY.format(movie_id=mid))
     results = pipe.execute()
+    results = [results[i] for i in range(0, len(results), 2)]
     recorded = 0
     for mid, raw in zip(ids, results):
         count = int(raw) if raw else 0
