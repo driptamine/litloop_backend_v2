@@ -51,6 +51,7 @@ urlpatterns = [
     path('photos/', include('photos.urls')),
     path('playlist/', include('playlists.urls')),
     path('views/', include('views.urls')),
+    path('memes/', include('memes.urls')),
     path('movies/', include('movies.urls')),
 
     path('queries/', include('queries.urls')),

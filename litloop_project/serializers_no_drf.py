@@ -104,6 +104,27 @@ def serialize_comment(comment, request=None):
         'media_url': comment.media_url,
     }
 
+def serialize_imdb_movie(movie, request=None):
+    if not movie:
+        return None
+    return {
+        'id': movie.id,
+        'imdb_id': movie.imdb_id,
+        'title': movie.title,
+        'url': movie.url,
+        'title_type': movie.title_type,
+        'imdb_rating': movie.imdb_rating,
+        'runtime_minutes': movie.runtime_minutes,
+        'year': movie.year,
+        'genres': movie.genres,
+        'num_votes': movie.num_votes,
+        'release_date': movie.release_date.isoformat() if movie.release_date else None,
+        'directors': movie.directors,
+        'description': movie.description,
+        'created_at': movie.created_at.isoformat() if movie.created_at else None,
+        'modified_at': movie.modified_at.isoformat() if movie.modified_at else None,
+    }
+
 def serialize_movie(movie, request=None):
     if not movie:
         return None

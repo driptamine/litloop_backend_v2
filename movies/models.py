@@ -25,13 +25,12 @@ class ImdbMovie(models.Model):
     title_type      = models.CharField(max_length=50, blank=True)
 
     imdb_rating     = models.FloatField(null=True, blank=True)
-    user_rating     = models.FloatField(null=True, blank=True)  # "Your Rating"
 
     runtime_minutes = models.PositiveIntegerField(null=True, blank=True)
     year            = models.PositiveIntegerField(null=True, blank=True)
     release_date    = models.DateField(null=True, blank=True)
 
-    genres          = models.CharField(max_length=255, blank=True)  # optional: split later
+    genres          = models.CharField(max_length=255, blank=True)
     num_votes       = models.PositiveIntegerField(null=True, blank=True)
 
     directors       = models.CharField(max_length=255, blank=True)
@@ -39,9 +38,8 @@ class ImdbMovie(models.Model):
 
     created_at      = models.DateField(null=True, blank=True)  # CSV: "Created"
     modified_at     = models.DateField(null=True, blank=True)  # CSV: "Modified"
-    date_rated      = models.DateField(null=True, blank=True)
 
-    position        = models.PositiveIntegerField(null=True, blank=True)  # Optional
+    position        = models.PositiveIntegerField(null=True, blank=True)
 
     def __str__(self):
         return self.title or self.imdb_id
@@ -73,3 +71,18 @@ class MovieImpression(models.Model):
 class MovieView(models.Model):
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE)
     user = models.ForeignKey('users.User', on_delete=models.CASCADE)
+
+
+class ImdbMovieRating(models.Model):
+    user       = models.ForeignKey(User, on_delete=models.CASCADE, related_name='imdb_ratings')
+    imdb_movie = models.ForeignKey(ImdbMovie, on_delete=models.CASCADE, related_name='ratings')
+    rating     = models.FloatField()
+    date_rated = models.DateField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'imdb_movie')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.imdb_movie.title}: {self.rating}"

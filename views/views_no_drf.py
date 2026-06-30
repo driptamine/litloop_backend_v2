@@ -1,4 +1,5 @@
 import json
+import requests
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from views.tasks import process_view
@@ -25,3 +26,12 @@ def views_up_view(request):
 
     result = process_view.delay(user_id, post_id)
     return HttpResponse(f'View Accepted {result.id}')
+
+def memes_view(request):
+    try:
+        resp = requests.get('https://meme-api.com/gimme/26', timeout=10)
+        resp.raise_for_status()
+        data = resp.json()
+        return JsonResponse(data, safe=False)
+    except requests.RequestException as e:
+        return JsonResponse({'error': str(e)}, status=502)

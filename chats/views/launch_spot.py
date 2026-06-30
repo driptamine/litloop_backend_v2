@@ -13,11 +13,18 @@ def launch_spot_transcriber(voice_msg_id: int, gcs_path: str):
     image_project = os.environ.get('GCP_IMAGE_PROJECT', 'cos-cloud')
     image_family = os.environ.get('GCP_IMAGE_FAMILY', 'cos-stable')
     container_image = os.environ.get('TRANSCRIBER_CONTAINER_IMAGE', 'gcr.io/{}/transcription-service:latest'.format(project_id))
+    machine_type = os.environ.get('GCP_MACHINE_TYPE', 'g2-standard-4')
+    accelerator_type = os.environ.get('GCP_ACCELERATOR', 'nvidia-l4')
 
     instance_name = f"transcriber-{voice_msg_id}-{os.urandom(4).hex()}"
 
     startup_script = f"""#!/bin/bash
 set -e
+INSTANCE_NAME=$(curl -s -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/name)
+cleanup() {{
+  gcloud compute instances delete "$INSTANCE_NAME" --zone="{zone}" --quiet || true
+}}
+trap cleanup EXIT
 docker pull {container_image}
 docker run --gpus all \\
   -e AUDIO_GCS_PATH="{gcs_path}" \\
@@ -27,14 +34,12 @@ docker run --gpus all \\
   -e WHISPER_MODEL_SIZE="{model_size}" \\
   -e GCS_BUCKET_NAME="{bucket_name}" \\
   {container_image}
-gcloud compute instances delete "$(hostname)" --zone="{zone}" --quiet
 """
 
     instance = compute_v1.Instance()
     instance.name = instance_name
-    instance.machine_type = f"zones/{zone}/machineTypes/n1-standard-4"
+    instance.machine_type = f"zones/{zone}/machineTypes/{machine_type}"
 
-    # Boot disk
     disk = compute_v1.AttachedDisk()
     initialize_params = compute_v1.AttachedDiskInitializeParams()
     initialize_params.source_image = f"projects/{image_project}/global/images/family/{image_family}"
@@ -44,7 +49,6 @@ gcloud compute instances delete "$(hostname)" --zone="{zone}" --quiet
     disk.boot = True
     instance.disks = [disk]
 
-    # Networking
     network_interface = compute_v1.NetworkInterface()
     network_interface.name = "global/networks/default"
     access_config = compute_v1.AccessConfig()
@@ -52,19 +56,16 @@ gcloud compute instances delete "$(hostname)" --zone="{zone}" --quiet
     network_interface.access_configs = [access_config]
     instance.network_interfaces = [network_interface]
 
-    # GPU accelerator
     accelerator = compute_v1.AcceleratorConfig()
-    accelerator.accelerator_type = f"zones/{zone}/acceleratorTypes/nvidia-tesla-t4"
+    accelerator.accelerator_type = f"zones/{zone}/acceleratorTypes/{accelerator_type}"
     accelerator.accelerator_count = 1
     instance.guest_accelerators = [accelerator]
 
-    # Scheduling - preemptible (spot)
     scheduling = compute_v1.Scheduling()
     scheduling.preemptible = True
     scheduling.on_host_maintenance = "TERMINATE"
     instance.scheduling = scheduling
 
-    # Service account with GCS and Compute scopes
     service_account = compute_v1.ServiceAccount()
     service_account.email = "default"
     service_account.scopes = [
@@ -72,7 +73,6 @@ gcloud compute instances delete "$(hostname)" --zone="{zone}" --quiet
     ]
     instance.service_accounts = [service_account]
 
-    # Metadata with startup script
     metadata = compute_v1.Metadata()
     metadata_item = compute_v1.Items()
     metadata_item.key = "startup-script"

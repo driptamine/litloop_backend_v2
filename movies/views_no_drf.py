@@ -3,11 +3,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
 import json
 
-from movies.models import Movie
+from movies.models import Movie, ImdbMovie
 from movies.tasks import increment_view, create_or_update_movie, scrape_tmdb_movie
 from movies.utils import tmdb as tmdb_utils
 from litloop_project.serializers_no_drf import (
-    serialize_movie, paginate_queryset, get_paginated_response
+    serialize_movie, serialize_imdb_movie, paginate_queryset, get_paginated_response
 )
 from users.auth_utils import jwt_required_testable
 from movies import redis_utils
@@ -95,6 +95,64 @@ def list_movies_view(request):
             item['impressions_count'] = redis_utils.get_impressions(db_id)
 
     return JsonResponse(response_data)
+
+
+def list_imdbmovies_view(request):
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Only GET allowed'}, status=405)
+
+    queryset = ImdbMovie.objects.all()
+
+    search = request.GET.get('search')
+    if search:
+        queryset = queryset.filter(title__icontains=search)
+
+    imdb_id = request.GET.get('imdb_id')
+    if imdb_id:
+        queryset = queryset.filter(imdb_id__in=imdb_id.split(','))
+
+    year = request.GET.get('year')
+    if year:
+        queryset = queryset.filter(year=year)
+
+    title_type = request.GET.get('title_type')
+    if title_type:
+        queryset = queryset.filter(title_type=title_type)
+
+    ordering = request.GET.get('ordering', '-year')
+    queryset = queryset.order_by(ordering)
+
+    items, paginator = paginate_queryset(queryset, request, page_size=20)
+    response_data = get_paginated_response(items, paginator, serialize_imdb_movie, request)
+
+    return JsonResponse(response_data)
+
+
+def imdb_movie_detail_view(request, imdb_id):
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Only GET allowed'}, status=405)
+
+    try:
+        movie = ImdbMovie.objects.get(imdb_id=imdb_id)
+    except ImdbMovie.DoesNotExist:
+        return JsonResponse({'error': 'ImdbMovie not found'}, status=404)
+
+    data = serialize_imdb_movie(movie, request)
+    return JsonResponse(data)
+
+
+def movie_detail_view(request, movie_id):
+    if request.method != 'GET':
+        return JsonResponse({'error': 'Only GET allowed'}, status=405)
+
+    try:
+        movie = Movie.objects.get(id=movie_id)
+    except Movie.DoesNotExist:
+        return JsonResponse({'error': 'Movie not found'}, status=404)
+
+    data = serialize_movie(movie, request)
+    data['impressions_count'] = redis_utils.get_impressions(movie.id)
+    return JsonResponse(data)
 
 
 @csrf_exempt
