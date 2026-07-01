@@ -22,18 +22,6 @@ if os.environ.get("TESTING"):
     CELERY_TASK_ALWAYS_EAGER = True
 
 CELERY_BEAT_SCHEDULE = {
-    "clear_sessions": {
-        "task": "clear_sessions",
-        "schedule": crontab(hour=1, minute=1, day_of_week=6),
-    },
-    "get_list_of_popular_media": {
-        "task": "get_list_of_popular_media",
-        "schedule": crontab(minute=1, hour="*/10"),
-    },
-    "update_listings_thumbnails": {
-        "task": "update_listings_thumbnails",
-        "schedule": crontab(minute=2, hour="*/30"),
-    },
     "flush-redis-impressions-likes": {
         "task": "posts.tasks.increment.flush_redis_impressions_likes",
         "schedule": 5.0,
