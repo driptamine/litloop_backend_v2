@@ -19,12 +19,10 @@ class AvatarUploadTests(TestCase):
         refresh = RefreshToken.for_user(self.user)
         self.token = str(refresh.access_token)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
-
-    @patch('users.views.avatar_upload.default_storage.url')
-    @patch('users.views.avatar_upload.default_storage.save')
-    def test_upload_avatar_success(self, mock_save, mock_url):
-        mock_save.return_value = 'avatars/test.png'
-        mock_url.return_value = 'https://storage.googleapis.com/bucket/avatars/test.png'
+    @patch('users.views.avatar_upload_no_drf.gcs_upload_file')
+    def test_upload_avatar_success(self, mock_upload):
+        mock_url = 'https://storage.googleapis.com/litloop_bucket_free/avatars/test.png'
+        mock_upload.return_value = mock_url
         
         avatar_file = SimpleUploadedFile("avatar.png", b"file_content", content_type="image/png")
         
@@ -33,13 +31,14 @@ class AvatarUploadTests(TestCase):
             {'avatar': avatar_file},
             format='multipart'
         )
+        
         self.assertEqual(response.status_code, 200)
         data = response.json()
-        self.assertEqual(data['avatar'], 'https://storage.googleapis.com/bucket/avatars/test.png')
+        self.assertEqual(data['avatar'], mock_url)
         
         self.user.refresh_from_db()
-        self.assertEqual(self.user.avatar, 'https://storage.googleapis.com/bucket/avatars/test.png')
-        mock_save.assert_called_once()
+        self.assertEqual(self.user.avatar, mock_url)
+        mock_upload.assert_called_once()
 
 
     def test_upload_avatar_unauthenticated(self):

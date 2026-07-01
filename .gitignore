@@ -8,4 +8,5 @@ venv_3.9/
 credentials/
 dump.rdb
 celerybeat-schedule
+litloop_project/uploaded_media/
 

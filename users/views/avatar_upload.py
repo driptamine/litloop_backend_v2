@@ -1,10 +1,10 @@
 import os
 import uuid
-from django.core.files.storage import default_storage
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, parsers
 from rest_framework.permissions import IsAuthenticated
+from chats.gcs import gcs_upload_file
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
@@ -51,8 +51,7 @@ class AvatarUploadView(APIView):
         filename = f"avatars/{request.user.id}_{uuid.uuid4()}{ext}"
 
         try:
-            saved_path = default_storage.save(filename, avatar_file)
-            public_url = default_storage.url(saved_path)
+            public_url = gcs_upload_file(avatar_file, filename, content_type=avatar_file.content_type)
 
             user = request.user
             user.avatar = public_url

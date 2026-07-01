@@ -1,8 +1,8 @@
 import os
 import uuid
-from django.core.files.storage import default_storage
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from chats.gcs import gcs_upload_file
 from users.auth_utils import jwt_required_testable
 
 @csrf_exempt
@@ -26,8 +26,7 @@ def upload_avatar_view(request):
     filename = f"avatars/{request.user.id}_{uuid.uuid4()}{ext}"
 
     try:
-        saved_path = default_storage.save(filename, avatar_file)
-        public_url = default_storage.url(saved_path)
+        public_url = gcs_upload_file(avatar_file, filename, content_type=avatar_file.content_type)
 
         user = request.user
         user.avatar = public_url
