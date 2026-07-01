@@ -1,14 +1,13 @@
 import json
-from django.conf import settings
 from posts.models import Post, PostPhoto, PostVideo, PostTrack, PostPlaylist, PostLike
 from photos.models import Photo
 from videos.models import Video
 from tracks.models import Track
 from playlists.models import Playlist
+from litloop_project.r2_storage import r2_url
 
 def serialize_post(post, request=None):
     cloudfront_domain = 'https://dgsmmq1mgfewt.cloudfront.net/'
-    gcs_domain = f'https://storage.googleapis.com/{settings.GCS_BUCKET_NAME}/'
 
     photos_data = post.photos.all().values('id', 's3_key', 'gcs_key', 'title')
     videos_data = post.videos.all().values('id', 's3_key', 'gcs_key', 'title', 'thumbnail')
@@ -39,8 +38,8 @@ def serialize_post(post, request=None):
         'photos': [
             {
                 'id': p['id'],
-                'url': f"{cloudfront_domain}{p['s3_key']}" if p['s3_key'] else None,
-                'gcs_url': f"{gcs_domain}{p['gcs_key']}" if p['gcs_key'] else None,
+                'url': r2_url(p.get('gcs_key')) or r2_url(p.get('s3_key')),
+                'gcs_url': r2_url(p.get('gcs_key')),
                 'gcs_key': p['gcs_key'],
                 'title': p['title']
             } for p in photos_data
@@ -48,18 +47,18 @@ def serialize_post(post, request=None):
         'videos': [
             {
                 'id': v['id'],
-                'url': f"{cloudfront_domain}{v['s3_key']}" if v['s3_key'] else None,
-                'gcs_url': f"{gcs_domain}{v['gcs_key']}" if v['gcs_key'] else None,
+                'url': r2_url(v.get('gcs_key')) or r2_url(v.get('s3_key')),
+                'gcs_url': r2_url(v.get('gcs_key')),
                 'gcs_key': v['gcs_key'],
-                'thumbnail_url': f"{cloudfront_domain}{v['thumbnail']}" if v['thumbnail'] else None,
+                'thumbnail_url': r2_url(v.get('thumbnail')),
                 'title': v['title']
             } for v in videos_data
         ],
         'tracks': [
             {
                 'id': t.id,
-                'url': f"{cloudfront_domain}{t.s3_key}" if t.s3_key else None,
-                'gcs_url': f"{gcs_domain}{t.gcs_key}" if t.gcs_key else None,
+                'url': r2_url(t.gcs_key) or r2_url(t.s3_key),
+                'gcs_url': r2_url(t.gcs_key),
                 'gcs_key': t.gcs_key,
                 'name': t.name,
                 'artists': [{'id': a.artist_uri, 'name': a.name} for a in t.artists.all()]

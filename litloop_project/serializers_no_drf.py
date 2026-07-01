@@ -1,6 +1,6 @@
 from django.http import JsonResponse
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.conf import settings
+from litloop_project.r2_storage import r2_url
 
 def paginate_queryset(queryset, request, page_size=10):
     page = request.GET.get('page', 1)
@@ -58,9 +58,7 @@ def serialize_track(track, request=None):
     if not track:
         return None
     
-    gcs_url = None
-    if track.gcs_key:
-        gcs_url = f"https://storage.googleapis.com/{settings.GCS_BUCKET_NAME}/{track.gcs_key}"
+    gcs_url = r2_url(track.gcs_key)
         
     return {
         'id': track.track_uri,

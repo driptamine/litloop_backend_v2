@@ -1,7 +1,7 @@
 from django.apps import apps
 from django.contrib import auth
-from django.conf import settings
 from rest_framework import serializers
+from litloop_project.r2_storage import r2_url
 from rest_framework.exceptions import AuthenticationFailed
 from users.serializers import UserSerializer
 
@@ -151,9 +151,7 @@ class TrackSerializer(serializers.ModelSerializer):
         return 0
 
     def get_gcs_url(self, obj):
-        if obj.gcs_key:
-            return f"https://storage.googleapis.com/{settings.GCS_BUCKET_NAME}/{obj.gcs_key}"
-        return None
+        return r2_url(obj.gcs_key)
 
 
 class AlbumSerializer(serializers.ModelSerializer):
@@ -222,6 +220,4 @@ class TrackListSerializer(serializers.ModelSerializer):
         return 0
 
     def get_gcs_url(self, obj):
-        if obj.gcs_key:
-            return f"https://storage.googleapis.com/{settings.GCS_BUCKET_NAME}/{obj.gcs_key}"
-        return None
+        return r2_url(obj.gcs_key)

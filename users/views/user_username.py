@@ -1,6 +1,5 @@
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
-from django.conf import settings
 from users.models import User
 from posts.models import Post
 from movies.models import WatchlistItem
@@ -8,6 +7,7 @@ from users.auth_utils import jwt_required
 from tracks.views.base_no_drf import user_tracks_view
 from photos.models import Photo, PhotoAlbum
 from videos.models import Video
+from litloop_project.r2_storage import r2_url
 from litloop_project.serializers_no_drf import paginate_queryset
 
 def user_username_detail_api(request, username):
@@ -116,19 +116,16 @@ def user_username_photos_api(request, username):
     queryset = Photo.objects.filter(user=user).order_by('-id')
     items, paginator = paginate_queryset(queryset, request, page_size=30)
 
-    bucket = settings.GCS_BUCKET_NAME
     data = []
     for photo in items:
-        gcs_url = f"https://storage.googleapis.com/{bucket}/{photo.gcs_key}" if photo.gcs_key else None
-        s3_url = f"https://storage.googleapis.com/{bucket}/{photo.s3_key}" if not gcs_url and photo.s3_key else None
-        url = gcs_url or s3_url
+        url = r2_url(photo.gcs_key) or r2_url(photo.s3_key)
         data.append({
             'id': photo.id,
             'pk': photo.pk,
             'gcs_url': url,
             'image': url,
-            'url': url or photo.gcs_key or photo.s3_key,
-            'file_path': url or photo.gcs_key or photo.s3_key,
+            'url': url,
+            'file_path': url,
             'name': photo.title or photo.filename or f'Photo {photo.id}',
             'title': photo.title or photo.filename or f'Photo {photo.id}',
         })
@@ -147,13 +144,10 @@ def user_username_albums_api(request, username):
     queryset = PhotoAlbum.objects.filter(user=user).order_by('-add_date')
     items, paginator = paginate_queryset(queryset, request, page_size=30)
 
-    bucket = settings.GCS_BUCKET_NAME
     data = []
     for album in items:
         first_item = album.photoalbumitem_set.first()
-        thumbnail_url = None
-        if first_item and first_item.photo.gcs_key:
-            thumbnail_url = f"https://storage.googleapis.com/{bucket}/{first_item.photo.gcs_key}"
+        thumbnail_url = r2_url(first_item.photo.gcs_key if first_item else None)
 
         data.append({
             'id': album.id,
@@ -179,10 +173,9 @@ def user_username_videos_api(request, username):
     queryset = Video.objects.filter(user=user).order_by('-id')
     items, paginator = paginate_queryset(queryset, request, page_size=30)
 
-    bucket = settings.GCS_BUCKET_NAME
     data = []
     for video in items:
-        gcs_url = f"https://storage.googleapis.com/{bucket}/{video.gcs_key}" if video.gcs_key else None
+        gcs_url = r2_url(video.gcs_key)
         thumb = video.thumbnail
         data.append({
             'id': video.id,

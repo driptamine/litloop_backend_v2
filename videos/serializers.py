@@ -1,6 +1,6 @@
-from django.conf import settings
 from rest_framework import serializers
 from videos.models import Video
+from litloop_project.r2_storage import r2_url
 
 class VideoSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField()
@@ -24,16 +24,10 @@ class VideoSerializer(serializers.ModelSerializer):
         ]
 
     def get_url(self, obj):
-        if obj.s3_key:
-            return f"https://dgsmmq1mgfewt.cloudfront.net/{obj.s3_key}"
-        return None
+        return r2_url(obj.gcs_key) or r2_url(obj.s3_key)
 
     def get_gcs_url(self, obj):
-        if obj.gcs_key:
-            return f"https://storage.googleapis.com/{settings.GCS_BUCKET_NAME}/{obj.gcs_key}"
-        return None
+        return r2_url(obj.gcs_key)
 
     def get_thumbnail_url(self, obj):
-        if obj.thumbnail:
-            return f"https://dgsmmq1mgfewt.cloudfront.net/{obj.thumbnail}"
-        return None
+        return r2_url(obj.thumbnail)

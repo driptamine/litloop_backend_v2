@@ -81,14 +81,15 @@ class VoiceMessage(models.Model):
 
     @property
     def url(self):
-        from django.conf import settings
         if self.gcs_key:
             if self.gcs_key.startswith('http'):
                 return self.gcs_key
-            return f"https://storage.googleapis.com/{settings.GCS_BUCKET_NAME}/{self.gcs_key}"
+            from litloop_project.r2_storage import r2_url
+            return r2_url(self.gcs_key)
         if self.s3_key:
             if self.s3_key.startswith('http'):
                 return self.s3_key
+            from django.conf import settings
             return f"https://{settings.AWS_STORAGE_BUCKET_NAME_DRIPTAMINE}.s3.amazonaws.com/{self.s3_key}"
         return None
 

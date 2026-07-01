@@ -132,3 +132,10 @@ class R2Storage(Storage):
         if isinstance(backend, FileSystemStorage):
             return backend.listdir(path)
         raise NotImplementedError
+
+
+def r2_url(key):
+    if not key:
+        return None
+    from django.core.files.storage import default_storage as _ds
+    return _ds.url(key)
