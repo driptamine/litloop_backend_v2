@@ -1,8 +1,8 @@
 import uuid
+from django.core.files.storage import default_storage
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from ..models import VoiceMessage
-from ..gcs import gcs_upload_file
 from .common import get_authenticated_user
 
 
@@ -33,8 +33,9 @@ def upload_chat_attachment(request):
     else:
         return JsonResponse({"error": "Unsupported file type"}, status=400)
 
-    gcs_path = f"chat_attachments/{uuid.uuid4()}.{ext}"
-    file_url = gcs_upload_file(file, gcs_path, content_type=file.content_type)
+    path = f"chat_attachments/{uuid.uuid4()}.{ext}"
+    saved_path = default_storage.save(path, file)
+    file_url = default_storage.url(saved_path)
 
     return JsonResponse({
         "url": file_url,
@@ -65,13 +66,14 @@ def voice_message_upload_api(request):
 
     try:
         ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'webm'
-        gcs_path = f"voice_messages/{uuid.uuid4()}.{ext}"
+        path = f"voice_messages/{uuid.uuid4()}.{ext}"
 
-        gcs_upload_file(uploaded_file, gcs_path, content_type=uploaded_file.content_type)
+        saved_path = default_storage.save(path, uploaded_file)
+        file_url = default_storage.url(saved_path)
 
         voice = VoiceMessage.objects.create(
             filename=filename,
-            gcs_key=gcs_path,
+            gcs_key=file_url,
             user=user,
             duration=float(duration)
         )

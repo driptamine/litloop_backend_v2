@@ -65,12 +65,7 @@ def get_or_create_user_from_google_data(google_data):
     # Download and re-host the Google avatar to avoid hotlink 429s
     local_avatar = download_and_save_avatar(google_picture, user.id) if google_picture else google_picture
 
-    needs_update = created or (
-        google_picture and
-        local_avatar != google_picture and
-        user.avatar != local_avatar
-    )
-    if needs_update:
+    if google_picture and local_avatar and local_avatar != user.avatar:
         user.avatar = local_avatar
         user.save(update_fields=["avatar"])
 

@@ -1,10 +1,10 @@
 import os
 import uuid
+from django.core.files.storage import default_storage
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, parsers
 from rest_framework.permissions import IsAuthenticated
-from chats.gcs import gcs_upload_file
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 
@@ -51,10 +51,9 @@ class AvatarUploadView(APIView):
         filename = f"avatars/{request.user.id}_{uuid.uuid4()}{ext}"
 
         try:
-            # Upload to GCS
-            public_url = gcs_upload_file(avatar_file, filename, content_type=avatar_file.content_type)
-            
-            # Update user record
+            saved_path = default_storage.save(filename, avatar_file)
+            public_url = default_storage.url(saved_path)
+
             user = request.user
             user.avatar = public_url
             user.save(update_fields=['avatar'])
@@ -64,6 +63,6 @@ class AvatarUploadView(APIView):
                 'avatar': public_url
             }, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({'error': f'Failed to upload to GCS: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': f'Failed to upload avatar: {str(e)}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 upload_avatar_view = AvatarUploadView.as_view()

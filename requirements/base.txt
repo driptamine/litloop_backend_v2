@@ -13,6 +13,7 @@ django-extensions
 django-mptt
 django-redis
 django-shortcuts
+django-storages
 dj-database-url
 djangorestframework
 djangorestframework-simplejwt

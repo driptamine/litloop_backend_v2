@@ -67,7 +67,10 @@ urlpatterns = [
 
     path('<str:username>/posts/', user_posts_view, name='user-username-posts'),
 
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+if settings.DEBUG and not settings.R2_BUCKET_NAME:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 # ref docker-celery
 websocket_urlpatterns = [

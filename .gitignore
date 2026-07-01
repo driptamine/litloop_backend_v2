@@ -5,6 +5,7 @@ venv_3.9/
 .env
 .env.examples
 
+credentials/
 dump.rdb
 celerybeat-schedule
 
